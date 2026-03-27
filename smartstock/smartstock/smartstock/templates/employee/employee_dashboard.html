@@ -1,0 +1,356 @@
+{% extends "employee/base.html" %}
+
+{% block title %}Employee Dashboard - Smart Inventory Management System{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="page-header">
+        <h1>Hello, Nice to see you</h1>
+        <p>Welcome to Smart Inventory Management System - Employee Portal</p>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="summary-cards">
+        <div class="stat-card">
+            <div class="stat-icon blue">
+                <i class="fas fa-box"></i>
+            </div>
+            <div class="stat-content">
+                <h3 id="total-products">0</h3>
+                <p>Total Products</p>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon green">
+                <i class="fas fa-warehouse"></i>
+            </div>
+            <div class="stat-content">
+                <h3 id="total-stock">0</h3>
+                <p>Total Stock</p>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon orange">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <div class="stat-content">
+                <h3 id="low-stock-count">0</h3>
+                <p>Low Stock Items</p>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon purple">
+                <i class="fas fa-shopping-cart"></i>
+            </div>
+            <div class="stat-content">
+                <h3 id="today-sales">0</h3>
+                <p>Today's Sales</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="quick-actions">
+        <h2>Quick Actions</h2>
+        <div class="action-grid">
+            <a href="/employee/sales-entry" class="action-card">
+                <div class="action-icon">
+                    <i class="fas fa-shopping-cart"></i>
+                </div>
+                <h3>Record Sale</h3>
+                <p>Add new sales transaction</p>
+            </a>
+            
+            <a href="/employee/stock-update" class="action-card">
+                <div class="action-icon">
+                    <i class="fas fa-plus-circle"></i>
+                </div>
+                <h3>Add Stock</h3>
+                <p>Update inventory stock</p>
+            </a>
+            
+            <a href="/employee/products-view" class="action-card">
+                <div class="action-icon">
+                    <i class="fas fa-boxes"></i>
+                </div>
+                <h3>View Products</h3>
+                <p>Browse product catalog</p>
+            </a>
+            
+            <a href="/employee/alerts-view" class="action-card">
+                <div class="action-icon">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <h3>Check Low Stock</h3>
+                <p>View stock alerts</p>
+            </a>
+        </div>
+    </div>
+
+    <!-- Recent Alerts -->
+    <div class="recent-alerts">
+        <h2>Recent Alerts</h2>
+        <div class="alert-list" id="recentAlerts">
+            <!-- Alerts will be loaded dynamically from database -->
+            <div class="no-alerts">
+                <i class="fas fa-check-circle text-success"></i>
+                <p>No recent alerts</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Load dashboard data
+async function loadDashboardData() {
+    try {
+        // Show loading state
+        showLoadingState();
+        
+        // Load all data in parallel for better performance
+        const [productsResponse, salesResponse, transactionsResponse] = await Promise.all([
+            fetch('/api/products'),
+            fetch('/api/sales'),
+            fetch('/api/transactions')
+        ]);
+        
+        // Check if responses are ok
+        if (!productsResponse.ok || !salesResponse.ok || !transactionsResponse.ok) {
+            throw new Error('Failed to fetch dashboard data');
+        }
+        
+        const productsData = await productsResponse.json();
+        const salesData = await salesResponse.json();
+        const transactionsData = await transactionsResponse.json();
+        
+        const products = productsData.products || [];
+        const sales = salesData.sales || [];
+        const transactions = transactionsData.transactions || [];
+        
+        // Update summary cards
+        updateSummaryCards(products, sales);
+        
+        // Update recent alerts
+        updateRecentAlerts(transactions, products);
+        
+        // Hide loading state
+        hideLoadingState();
+        
+    } catch (error) {
+        console.error('Error loading dashboard data:', error);
+        hideLoadingState();
+        showError('Failed to load dashboard data. Please refresh the page.');
+    }
+}
+
+// Show loading state
+function showLoadingState() {
+    // Show loading in summary cards
+    document.getElementById('total-products').innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    document.getElementById('total-stock').innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    document.getElementById('low-stock-count').innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    document.getElementById('today-sales').innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    
+    // Show loading in alerts
+    const alertsContainer = document.getElementById('recentAlerts');
+    alertsContainer.innerHTML = `
+        <div class="text-center p-4">
+            <i class="fas fa-spinner fa-spin fa-2x text-primary"></i>
+            <p class="mt-2">Loading alerts...</p>
+        </div>
+    `;
+}
+
+// Hide loading state
+function hideLoadingState() {
+    // Loading state will be replaced by actual data
+}
+
+// Update summary cards
+function updateSummaryCards(products, sales) {
+    // Total products
+    document.getElementById('total-products').textContent = products.length;
+    
+    // Total stock
+    const totalStock = products.reduce((sum, product) => sum + (product.stock_quantity || 0), 0);
+    document.getElementById('total-stock').textContent = totalStock;
+    
+    // Low stock items
+    const lowStockItems = products.filter(product => 
+        product.stock_quantity <= (product.min_stock_level || 0)
+    ).length;
+    document.getElementById('low-stock-count').textContent = lowStockItems;
+    
+    // Today's sales
+    const today = new Date().toDateString();
+    const todaySales = sales.filter(sale => 
+        new Date(sale.date).toDateString() === today
+    ).length;
+    document.getElementById('today-sales').textContent = todaySales;
+}
+
+// Update recent alerts
+function updateRecentAlerts(transactions, products) {
+    const alertsContainer = document.getElementById('recentAlerts');
+    
+    if (transactions.length === 0) {
+        alertsContainer.innerHTML = `
+            <div class="no-alerts">
+                <i class="fas fa-check-circle text-success"></i>
+                <p>No recent alerts</p>
+            </div>
+        `;
+        return;
+    }
+    
+    // Get recent transactions (last 5)
+    const recentTransactions = transactions
+        .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+        .slice(0, 5);
+    
+    alertsContainer.innerHTML = recentTransactions.map(transaction => {
+        const product = products.find(p => p._id === transaction.product_id);
+        const productName = product ? product.name : 'Unknown Product';
+        const alertType = getAlertType(transaction);
+        const timeAgo = getTimeAgo(transaction.timestamp);
+        
+        return `
+            <div class="alert-item ${alertType.class}">
+                <div class="alert-icon">
+                    <i class="fas fa-${alertType.icon}"></i>
+                </div>
+                <div class="alert-content">
+                    <h4>${alertType.title}</h4>
+                    <p>${alertType.description(productName, transaction)}</p>
+                    <small>${timeAgo}</small>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+// Get alert type based on transaction
+function getAlertType(transaction) {
+    switch (transaction.type) {
+        case 'stock_out':
+            return {
+                class: 'danger',
+                icon: 'exclamation-triangle',
+                title: 'Stock Out',
+                description: (name, trans) => `${name} stock decreased by ${trans.quantity} units`
+            };
+        case 'stock_in':
+            return {
+                class: 'success',
+                icon: 'plus-circle',
+                title: 'Stock In',
+                description: (name, trans) => `${name} stock increased by ${trans.quantity} units`
+            };
+        case 'sale':
+            return {
+                class: 'info',
+                icon: 'shopping-cart',
+                title: 'Sale Recorded',
+                description: (name, trans) => `Sale of ${trans.quantity} units of ${name}`
+            };
+        default:
+            return {
+                class: 'warning',
+                icon: 'info-circle',
+                title: 'Inventory Update',
+                description: (name, trans) => `${name} inventory updated`
+            };
+    }
+}
+
+// Get time ago string
+function getTimeAgo(timestamp) {
+    const now = new Date();
+    const time = new Date(timestamp);
+    const diffMs = now - time;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+    
+    if (diffMins < 60) {
+        return `${diffMins} minute${diffMins !== 1 ? 's' : ''} ago`;
+    } else if (diffHours < 24) {
+        return `${diffHours} hour${diffHours !== 1 ? 's' : ''} ago`;
+    } else {
+        return `${diffDays} day${diffDays !== 1 ? 's' : ''} ago`;
+    }
+}
+
+// Show error message
+function showError(message) {
+    const alertsContainer = document.getElementById('recentAlerts');
+    alertsContainer.innerHTML = `
+        <div class="alert-item danger">
+            <div class="alert-icon">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <div class="alert-content">
+                <h4>Error</h4>
+                <p>${message}</p>
+                <small>Just now</small>
+            </div>
+        </div>
+    `;
+}
+
+// Load data on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadDashboardData();
+    
+    // Refresh data every 30 seconds
+    setInterval(() => {
+        loadDashboardData();
+    }, 30000);
+    
+    // Add visibility change handler to pause refresh when tab is not visible
+    document.addEventListener('visibilitychange', function() {
+        if (document.hidden) {
+            // Tab is hidden, pause auto-refresh
+            if (window.refreshInterval) {
+                clearInterval(window.refreshInterval);
+            }
+        } else {
+            // Tab is visible, resume auto-refresh and reload data
+            loadDashboardData();
+            window.refreshInterval = setInterval(loadDashboardData, 30000);
+        }
+    });
+});
+
+// Retry mechanism for failed loads
+async function loadDashboardDataWithRetry(maxRetries = 3) {
+    let retryCount = 0;
+    
+    while (retryCount < maxRetries) {
+        try {
+            await loadDashboardData();
+            return; // Success, exit retry loop
+        } catch (error) {
+            retryCount++;
+            console.warn(`Dashboard load attempt ${retryCount} failed:`, error);
+            
+            if (retryCount < maxRetries) {
+                // Wait before retry (exponential backoff)
+                await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, retryCount - 1)));
+            }
+        }
+    }
+    
+    // All retries failed
+    showError('Failed to load dashboard data after multiple attempts. Please check your connection.');
+}
+
+// Manual refresh function
+function refreshDashboard() {
+    loadDashboardData();
+}
+</script>
+{% endblock %}

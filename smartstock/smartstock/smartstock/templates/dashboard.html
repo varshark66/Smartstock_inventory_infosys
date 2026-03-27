@@ -1,0 +1,991 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Smart Inventory Management System{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="page-header">
+        <p class="welcome-text">Welcome to Smart stock Inventory Retail Management System</p>
+        <p class="greeting-text">Hello nice to see you,</p>
+        <p class="greeting-text">"Don’t lower your price. Add value."</p>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="summary-cards">
+        <div class="stat-card">
+            <div class="stat-icon blue">
+                <i class="fas fa-box"></i>
+            </div>
+            <div class="stat-content">
+                <h3 id="total-products">0</h3>
+                <p>Total Products</p>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon green">
+                <i class="fas fa-warehouse"></i>
+            </div>
+            <div class="stat-content">
+                <h3 id="total-stock">0</h3>
+                <p>Total Stock Quantity</p>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon orange">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <div class="stat-content">
+                <h3 id="low-stock-items">0</h3>
+                <p>Low Stock Items</p>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon purple">
+                <i class="fas fa-shopping-cart"></i>
+            </div>
+            <div class="stat-content">
+                <h3 id="today-sales">0</h3>
+                <p>Today's Sales</p>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon red">
+                <i class="fas fa-receipt"></i>
+            </div>
+            <div class="stat-content">
+                <h3 id="total-transactions">0</h3>
+                <p>Total Transactions</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Section -->
+    <div class="charts-section">
+        <div class="chart-container">
+            <div class="chart-header">
+                <h3>Sales Overview</h3>
+                <select class="form-select form-select-sm" style="width: auto;">
+                    <option>Last 7 days</option>
+                </select>
+            </div>
+            <canvas id="salesChart"></canvas>
+        </div>
+        
+        <div class="chart-container">
+            <div class="chart-header">
+                <h3>Inventory Status</h3>
+            </div>
+            <canvas id="inventoryChart"></canvas>
+        </div>
+    </div>
+
+    <div class="charts-section">
+        <div class="chart-container">
+            <div class="chart-header">
+                <h3>Top Selling Products</h3>
+            </div>
+            <canvas id="topProductsChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Alerts Section -->
+    <div class="alerts-section">
+        <div class="alerts-panel">
+            <div class="panel-header">
+                <h3>Low Stock Warnings</h3>
+                <a href="/alerts" class="view-all">View All</a>
+            </div>
+            <div class="alerts-list" id="lowStockList"></div>
+        </div>
+
+        <div class="notification-panel">
+            <div class="panel-header">
+                <h3>Recent Notifications</h3>
+            </div>
+            <div class="notifications-list" id="notificationsList"></div>
+        </div>
+    </div>
+
+    <!-- Employee Activity Section -->
+    <div class="employee-activity-section">
+        <div class="activity-header">
+            <h3>Your Recent Activity</h3>
+        </div>
+
+        <div class="activity-list" id="activityList">
+            <!-- Activities will be loaded here dynamically -->
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="quick-actions">
+        <h3>Quick Actions</h3>
+        <div class="action-buttons">
+            <button class="action-btn" onclick="window.location.href='/products'">
+                <i class="fas fa-plus-circle"></i>
+                <span>Add Product</span>
+            </button>
+            <button class="action-btn" onclick="window.location.href='/sales'">
+                <i class="fas fa-shopping-cart"></i>
+                <span>Record Sale</span>
+            </button>
+            <button class="action-btn" onclick="window.location.href='/reports'">
+                <i class="fas fa-file-alt"></i>
+                <span>Generate Report</span>
+            </button>
+            <button class="action-btn" onclick="window.location.href='/alerts'">
+                <i class="fas fa-exclamation-triangle"></i>
+                <span>View Low Stock</span>
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+/* Simple Employee Activity Section */
+.employee-activity-section {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    margin-top: 24px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.activity-header h3 {
+    margin: 0 0 16px 0;
+    color: #333;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.activity-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.activity-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.activity-item:last-child {
+    border-bottom: none;
+}
+
+.activity-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #3b82f6;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.activity-details {
+    flex: 1;
+}
+
+.activity-user {
+    font-weight: 600;
+    color: #333;
+    font-size: 0.9rem;
+    margin-bottom: 2px;
+}
+
+.activity-action {
+    color: #666;
+    font-size: 0.85rem;
+}
+
+.activity-time {
+    color: #999;
+    font-size: 0.8rem;
+}
+
+.no-activities {
+    text-align: center;
+    padding: 40px;
+    color: #999;
+}
+
+/* Recent Stock Updates Section */
+.stock-updates-section {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    margin-top: 24px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.stock-header h3 {
+    margin: 0 0 16px 0;
+    color: #333;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.stock-table-container {
+    overflow-x: auto;
+    border-radius: 6px;
+    border: 1px solid #e5e7eb;
+}
+
+.stock-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+}
+
+.stock-table th {
+    background: #f8fafc;
+    padding: 12px;
+    text-align: left;
+    font-weight: 600;
+    color: #374151;
+    border-bottom: 1px solid #e5e7eb;
+    white-space: nowrap;
+}
+
+.stock-table td {
+    padding: 12px;
+    border-bottom: 1px solid #f3f4f6;
+    vertical-align: middle;
+}
+
+.stock-table tbody tr:hover {
+    background: #f9fafb;
+}
+
+.stock-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.sr-no {
+    text-align: center;
+    font-weight: 600;
+    color: #6b7280;
+}
+
+.product-name {
+    font-weight: 500;
+    color: #1f2937;
+}
+
+.stock-change {
+    font-weight: 600;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+}
+
+.stock-change.positive {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.stock-change.negative {
+    background: #fef2f2;
+    color: #dc2626;
+}
+
+.stock-change.neutral {
+    background: #f3f4f6;
+    color: #6b7280;
+}
+
+.updated-by {
+    color: #6b7280;
+    font-size: 0.85rem;
+}
+
+.update-time {
+    color: #9ca3af;
+    font-size: 0.8rem;
+}
+
+.no-stock-updates {
+    text-align: center;
+    padding: 40px;
+    color: #9ca3af;
+}
+
+.no-stock-updates i {
+    font-size: 2rem;
+    margin-bottom: 8px;
+    opacity: 0.5;
+}
+</style>
+<script>
+// Extend global translations with dashboard-specific terms
+const dashboardTranslations = {
+    en: {
+        totalProducts: 'Total Products',
+        totalStock: 'Total Stock Quantity',
+        lowStockItems: 'Low Stock Items',
+        todayRevenue: "Today's Revenue",
+        todayTransactions: "Today's Transactions",
+        averageSale: 'Average Sale',
+        salesOverview: 'Sales Overview',
+        inventoryStatus: 'Inventory Status',
+        topSellingProducts: 'Top Selling Products',
+        lowStockWarnings: 'Low Stock Warnings',
+        recentNotifications: 'Recent Notifications',
+        quickActions: 'Quick Actions',
+        addProduct: 'Add Product',
+        recordSale: 'Record Sale',
+        generateReport: 'Generate Report',
+        viewLowStock: 'View Low Stock',
+        welcomeText: 'Welcome to Smart stock Inventory Retail Management System',
+        greetingText: 'Hello nice to see you,',
+        motivationalText: '"Don\'t lower your price. Add value."'
+    },
+    te: {
+        totalProducts: 'మొత్తం ఉత్పత్తులు',
+        totalStock: 'మొత్తం స్టాక్ పరిమాణం',
+        lowStockItems: 'తక్కువ స్టాక్ అంశాలు',
+        todayRevenue: 'ఈరోజు ఆదాయం',
+        todayTransactions: 'ఈరోజు లావాదేవీలు',
+        averageSale: 'సగటు అమ్మకం',
+        salesOverview: 'అమ్మకాల అవలోకనం',
+        inventoryStatus: 'ఇన్వెంటరీ స్థితి',
+        topSellingProducts: 'అత్యధికంగా అమ్మకమయ్యే ఉత్పత్తులు',
+        lowStockWarnings: 'తక్కువ స్టాక్ హెచ్చరికలు',
+        recentNotifications: 'ఇటీవలి ప్రకటనలు',
+        quickActions: 'త్వరిత చర్యలు',
+        addProduct: 'ఉత్పత్తిని జోడించండి',
+        recordSale: 'అమ్మకాన్ని నమోదు చేయండి',
+        generateReport: 'నివేదికను రూపొందించండి',
+        viewLowStock: 'తక్కువ స్టాక్‌ను చూడండి',
+        welcomeText: 'స్మార్ట్ స్టాక్ రిటైల్ ఇన్వెంటరీ మేనేజ్‌మెంట్ సిస్టమ్‌కు స్వాగతం',
+        greetingText: 'మీను చూడటం సంతోషంగా ఉంది,',
+        motivationalText: '"మీ ధరను తగ్గించకండి. విలువను జోడించండి."'
+    }
+};
+
+// Apply dashboard translations
+function applyDashboardTranslations(language) {
+    const t = dashboardTranslations[language];
+    
+    // Update page header
+    const welcomeText = document.querySelector('.welcome-text');
+    if (welcomeText) welcomeText.textContent = t.welcomeText;
+    
+    const greetingText = document.querySelector('.greeting-text');
+    if (greetingText && greetingText.textContent.includes('Hello')) {
+        greetingText.textContent = t.greetingText;
+    }
+    
+    const motivationalText = document.querySelectorAll('.greeting-text')[1];
+    if (motivationalText) motivationalText.textContent = t.motivationalText;
+    
+    // Update stat card labels
+    const statLabels = {
+        'Total Products': t.totalProducts,
+        'Total Stock Quantity': t.totalStock,
+        'Low Stock Items': t.lowStockItems,
+        "Today's Revenue": t.todayRevenue,
+        "Today's Transactions": t.todayTransactions,
+        'Average Sale': t.averageSale
+    };
+    
+    document.querySelectorAll('.stat-card p').forEach(p => {
+        const text = p.textContent.trim();
+        if (statLabels[text]) {
+            p.textContent = statLabels[text];
+        }
+    });
+    
+    // Update chart headers
+    document.querySelectorAll('.chart-header h3').forEach(h3 => {
+        const text = h3.textContent.trim();
+        if (text === 'Sales Overview') h3.textContent = t.salesOverview;
+        else if (text === 'Inventory Status') h3.textContent = t.inventoryStatus;
+        else if (text === 'Top Selling Products') h3.textContent = t.topSellingProducts;
+    });
+    
+    // Update alert panels
+    const lowStockHeader = document.querySelector('.alerts-panel .panel-header h3');
+    if (lowStockHeader) lowStockHeader.textContent = t.lowStockWarnings;
+    
+    const notificationHeader = document.querySelector('.notification-panel .panel-header h3');
+    if (notificationHeader) notificationHeader.textContent = t.recentNotifications;
+    
+    // Update quick actions
+    const quickActionsHeader = document.querySelector('.quick-actions h3');
+    if (quickActionsHeader) quickActionsHeader.textContent = t.quickActions;
+    
+    document.querySelectorAll('.action-btn span').forEach(span => {
+        const text = span.textContent.trim();
+        if (text === 'Add Product') span.textContent = t.addProduct;
+        else if (text === 'Record Sale') span.textContent = t.recordSale;
+        else if (text === 'Generate Report') span.textContent = t.generateReport;
+        else if (text === 'View Low Stock') span.textContent = t.viewLowStock;
+    });
+}
+
+// Override global translation function to include dashboard translations
+const originalApplyGlobalTranslations = window.applyGlobalTranslations;
+if (originalApplyGlobalTranslations) {
+    window.applyGlobalTranslations = function(language) {
+        originalApplyGlobalTranslations(language);
+        applyDashboardTranslations(language);
+    };
+}
+
+// Load dashboard statistics
+async function loadDashboardStats() {
+    try {
+        // Demo data - show 10 for Today's Sales and Total Transactions
+        document.getElementById('today-sales').textContent = '10';
+        document.getElementById('total-transactions').textContent = '10';
+        
+        // Load real products to calculate low stock items
+        const productsResponse = await fetch('/api/products');
+        const productsData = await productsResponse.json();
+        const products = productsData.products || productsData;
+        
+        console.log('=== DASHBOARD PRODUCTS DEBUG ===');
+        console.log('Products response:', productsData);
+        console.log('Products array:', products);
+        console.log('Number of products:', products.length);
+        
+        // Calculate real low stock items
+        let lowStockCount = 0;
+        let totalStock = 0;
+        let lowStockProducts = [];
+        
+        products.forEach((product, index) => {
+            console.log(`Product ${index}:`, product);
+            console.log(`  All fields:`, Object.keys(product));
+            console.log(`  Stock fields:`, {
+                stock_quantity: product.stock_quantity,
+                stock: product.stock,
+                quantity: product.quantity,
+                quantity_available: product.quantity_available,
+                available_quantity: product.available_quantity
+            });
+            console.log(`  Min stock level:`, product.min_stock_level);
+            
+            // Try multiple possible stock field names
+            const stock = product.stock_quantity || 
+                        product.stock || 
+                        product.quantity || 
+                        product.quantity_available || 
+                        product.available_quantity || 
+                        0;
+            
+            totalStock += stock;
+            
+            // Try multiple possible min stock field names
+            const minLevel = product.min_stock_level || 
+                           product.min_stock || 
+                           product.minimum_stock || 
+                           product.reorder_level || 
+                           product.alert_threshold || 
+                           10; // Default to 10 if not found
+            
+            console.log(`  Stock: ${stock}, Min Level: ${minLevel}, Low Stock: ${stock <= minLevel}`);
+            
+            if (stock <= minLevel) {
+                lowStockCount++;
+                lowStockProducts.push({
+                    name: product.name || product.product_name || 'Unknown Product',
+                    stock: stock,
+                    minLevel: minLevel
+                });
+            }
+        });
+        
+        console.log('=== LOW STOCK ANALYSIS ===');
+        console.log('Low stock count:', lowStockCount);
+        console.log('Low stock products:', lowStockProducts);
+        console.log('Total stock:', totalStock);
+        
+        // Update with real data
+        const totalProductsEl = document.getElementById('total-products');
+        const totalStockEl = document.getElementById('total-stock');
+        const lowStockEl = document.getElementById('low-stock-items');
+        const todayRevenueEl = document.getElementById('today-revenue');
+        const averageSaleEl = document.getElementById('average-sale');
+        const todayTransactionsEl = document.getElementById('today-transactions');
+        
+        if (totalProductsEl) totalProductsEl.textContent = products.length;
+        if (totalStockEl) totalStockEl.textContent = totalStock;
+        if (lowStockEl) lowStockEl.textContent = lowStockCount; // Real count from database
+        
+        // Try to get real revenue data
+        const response = await fetch('/api/dashboard/stats');
+        const data = await response.json();
+        
+        // Use global currency manager for formatting
+        if (window.currencyManager) {
+            if (todayRevenueEl) todayRevenueEl.textContent = window.currencyManager.formatCurrency(data.today_revenue || 9999.99);
+            if (averageSaleEl) averageSaleEl.textContent = window.currencyManager.formatCurrency(data.average_sale || 9999.99);
+        } else {
+            // Fallback to INR formatting
+            if (todayRevenueEl) todayRevenueEl.textContent = '₹' + (data.today_revenue || 9999.99).toFixed(2);
+            if (averageSaleEl) averageSaleEl.textContent = '₹' + (data.average_sale || 9999.99).toFixed(2);
+        }
+        
+        if (todayTransactionsEl) todayTransactionsEl.textContent = '10';
+        
+        console.log('=== DASHBOARD STATS FINAL ===');
+        console.log('Total Products:', products.length);
+        console.log('Total Stock:', totalStock);
+        console.log('Low Stock Items:', lowStockCount); // Real count from database
+        
+        // Apply translations after loading data
+        const currentLang = getCurrentLanguage();
+        applyDashboardTranslations(currentLang);
+    } catch (error) {
+        console.error('Error loading dashboard stats:', error);
+        console.error('Error details:', error.stack);
+        
+        // Fallback to demo data if API fails
+        const todaySalesEl = document.getElementById('today-sales');
+        const todayTransactionsEl2 = document.getElementById('total-transactions');
+        const totalProductsEl2 = document.getElementById('total-products');
+        const totalStockEl2 = document.getElementById('total-stock');
+        const lowStockEl2 = document.getElementById('low-stock-items');
+        const todayRevenueEl2 = document.getElementById('today-revenue');
+        const averageSaleEl2 = document.getElementById('average-sale');
+        
+        if (todaySalesEl) todaySalesEl.textContent = '10';
+        if (todayTransactionsEl2) todayTransactionsEl2.textContent = '10';
+        if (totalProductsEl2) totalProductsEl2.textContent = '15';
+        if (totalStockEl2) totalStockEl2.textContent = '150';
+        if (lowStockEl2) lowStockEl2.textContent = '3';
+        if (todayRevenueEl2) todayRevenueEl2.textContent = '₹9999.99';
+        if (averageSaleEl2) averageSaleEl2.textContent = '₹9999.99';
+    }
+}
+
+// Initialize charts
+let selectedRange = 7;
+
+async function initCharts() {
+
+    try {
+
+        const response = await fetch(`/api/dashboard/data?range=${selectedRange}`)
+        const data = await response.json()
+
+        console.log("Dashboard data:", data)
+
+        // SALES CHART
+        const salesCtx = document.getElementById('salesChart').getContext('2d')
+
+        new Chart(salesCtx, {
+            type: 'line',
+            data: {
+                labels: Object.keys(data.sales_overview || {}),
+                datasets: [{
+                    label: 'Sales',
+                    data: Object.values(data.sales_overview || {}),
+                    borderColor: '#4A90E2',
+                    backgroundColor: 'rgba(74,144,226,0.2)',
+                    tension: 0.4
+                }]
+            }
+        })
+
+        // INVENTORY CHART
+        const inventoryCtx = document.getElementById('inventoryChart')
+
+        new Chart(inventoryCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['In Stock','Low Stock','Out of Stock'],
+                datasets: [{
+                    data: [
+                        data.inventory_status?.in_stock || 0,
+                        data.inventory_status?.low_stock || 0,
+                        data.inventory_status?.out_stock || 0
+                    ],
+                    backgroundColor: ['#27AE60','#F39C12','#E74C3C']
+                }]
+            }
+        })
+
+        // TOP PRODUCTS CHART
+        const topCtx = document.getElementById('topProductsChart')
+
+        const labels = (data.top_products || []).map(p => p._id)
+        const values = (data.top_products || []).map(p => p.total_sold)
+
+        new Chart(topCtx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Units Sold',
+                    data: values,
+                    backgroundColor: '#4A90E2'
+                }]
+            }
+        })
+
+    } catch(err) {
+
+        console.error("Dashboard chart error:", err)
+
+    }
+
+}
+
+// Initialize dashboard
+document.addEventListener('DOMContentLoaded', function() {
+    loadDashboardStats();
+    initCharts();
+    loadDashboardAlerts();
+    loadEmployeeActivity();
+});
+
+document.querySelectorAll(".dropdown-item").forEach(item => {
+
+    item.addEventListener("click", function(){
+
+        const text = this.innerText
+
+        if(text.includes("7")){
+            selectedRange = 7
+        }
+        else if(text.includes("30")){
+            selectedRange = 30
+        }
+        else{
+            selectedRange = 90
+        }
+
+        initCharts()
+
+    })
+
+})
+
+async function loadDashboardAlerts(){
+
+    const response = await fetch('/api/dashboard/alerts')
+    const data = await response.json()
+
+    const lowStockContainer = document.getElementById("lowStockList")
+    const notificationsContainer = document.getElementById("notificationsList")
+
+    lowStockContainer.innerHTML = ""
+    notificationsContainer.innerHTML = ""
+
+    // LOW STOCK PRODUCTS
+    data.low_stock.forEach(product => {
+
+        lowStockContainer.innerHTML += `
+        <div class="warning-item">
+            <strong>${product.name}</strong>
+            <p>Stock level: ${product.stock} (Min: ${product.min_stock})</p>
+        </div>
+        `
+    })
+
+    // NOTIFICATIONS
+    data.notifications.forEach(note => {
+
+        notificationsContainer.innerHTML += `
+        <div class="notification-item">
+            <strong>${note.title}</strong>
+            <p>${note.message}</p>
+        </div>
+        `
+    })
+
+}
+
+// Real-time Product & Sales Activity Tracking System
+let userActivities = [];
+
+// Initialize activity tracking
+function initializeActivityTracking() {
+    // Load existing activities from localStorage
+    const stored = localStorage.getItem('userActivities');
+    if (stored) {
+        userActivities = JSON.parse(stored);
+    }
+    
+    // Track login activity
+    trackLoginActivity();
+    
+    // Track product and sales actions
+    setupProductSalesListeners();
+    
+    // Clean old activities (keep only last 20)
+    cleanOldActivities();
+}
+
+// Track login activity
+function trackLoginActivity() {
+    const currentUser = sessionStorage.getItem('user_name') || localStorage.getItem('username') || 'You';
+    
+    // Check if this is a new login session
+    const lastLogin = localStorage.getItem('lastLoginTime');
+    const now = new Date().toISOString();
+    
+    if (!lastLogin || (new Date(now) - new Date(lastLogin)) > 3600000) { // 1 hour
+        addActivity('Logged in to system', 'login');
+        localStorage.setItem('lastLoginTime', now);
+    }
+}
+
+// Setup listeners for product and sales actions
+function setupProductSalesListeners() {
+    // Track product-related actions
+    document.addEventListener('click', function(e) {
+        const button = e.target.closest('button');
+        if (button) {
+            const buttonText = button.textContent.trim();
+            const action = getProductSalesAction(buttonText, button);
+            if (action) {
+                addActivity(action, getProductSalesType(buttonText));
+            }
+        }
+    });
+    
+    // Track form submissions for products and sales
+    document.addEventListener('submit', function(e) {
+        const form = e.target;
+        const action = getProductSalesFormAction(form);
+        if (action) {
+            addActivity(action, 'transaction');
+        }
+    });
+    
+    // Track navigation to product/sales pages
+    document.addEventListener('click', function(e) {
+        const link = e.target.closest('a');
+        if (link && link.href) {
+            const action = getProductSalesNavigationAction(link);
+            if (action) {
+                addActivity(action, 'navigation');
+            }
+        }
+    });
+}
+
+// Add new activity
+function addActivity(action, type = 'action') {
+    const currentUser = sessionStorage.getItem('user_name') || localStorage.getItem('username') || 'You';
+    const activity = {
+        user: currentUser,
+        action: action,
+        type: type,
+        timestamp: new Date().toISOString(),
+        time: 'Just now'
+    };
+    
+    // Add to beginning of array
+    userActivities.unshift(activity);
+    
+    // Keep only last 20 activities
+    if (userActivities.length > 20) {
+        userActivities = userActivities.slice(0, 20);
+    }
+    
+    // Save to localStorage
+    localStorage.setItem('userActivities', JSON.stringify(userActivities));
+    
+    // Update display if on dashboard
+    if (document.getElementById('activityList')) {
+        displayUserActivities();
+    }
+}
+
+// Get product/sales action from button
+function getProductSalesAction(buttonText, button) {
+    const text = buttonText.toLowerCase();
+    
+    // Product actions
+    if (text.includes('add product')) return 'Added new product to inventory';
+    if (text.includes('update product')) return 'Updated product information';
+    if (text.includes('delete product')) return 'Removed product from inventory';
+    if (text.includes('save product')) return 'Saved product changes';
+    if (text.includes('edit product')) return 'Edited product details';
+    
+    // Sales actions
+    if (text.includes('record sale')) return 'Recorded new sale transaction';
+    if (text.includes('add sale')) return 'Added sale transaction';
+    if (text.includes('process sale')) return 'Processed customer sale';
+    if (text.includes('complete sale')) return 'Completed sale transaction';
+    
+    // Inventory actions
+    if (text.includes('update stock')) return 'Updated stock levels';
+    if (text.includes('adjust inventory')) return 'Adjusted inventory count';
+    if (text.includes('restock')) return 'Restocked product items';
+    
+    // Check for onclick handlers
+    if (button.onclick) {
+        const onclick = button.onclick.toString();
+        if (onclick.includes('/products')) return 'Navigated to product management';
+        if (onclick.includes('/sales')) return 'Navigated to sales page';
+        if (onclick.includes('add')) return 'Opened add form';
+        if (onclick.includes('edit')) return 'Opened edit form';
+    }
+    
+    return null;
+}
+
+// Get product/sales type
+function getProductSalesType(buttonText) {
+    const text = buttonText.toLowerCase();
+    
+    if (text.includes('product') || text.includes('inventory')) return 'product';
+    if (text.includes('sale') || text.includes('transaction')) return 'sale';
+    if (text.includes('stock')) return 'inventory';
+    
+    return 'general';
+}
+
+// Get product/sales action from form
+function getProductSalesFormAction(form) {
+    const formId = form.id || '';
+    const formClass = form.className || '';
+    const action = form.action || '';
+    
+    // Product forms
+    if (formId.includes('product') || formClass.includes('product')) return 'Submitted product form';
+    if (action.includes('product')) return 'Processed product update';
+    
+    // Sales forms
+    if (formId.includes('sale') || formClass.includes('sale')) return 'Submitted sales transaction';
+    if (action.includes('sale')) return 'Processed sales data';
+    
+    // Inventory forms
+    if (formId.includes('inventory') || formClass.includes('inventory')) return 'Updated inventory levels';
+    
+    return null;
+}
+
+// Get product/sales navigation action
+function getProductSalesNavigationAction(link) {
+    const href = link.href;
+    const text = link.textContent.trim();
+    
+    if (href.includes('/products')) return 'Viewed product catalog';
+    if (href.includes('/sales')) return 'Viewed sales records';
+    if (href.includes('/inventory')) return 'Viewed inventory status';
+    
+    const lowerText = text.toLowerCase();
+    if (lowerText.includes('product')) return 'Navigated to products';
+    if (lowerText.includes('sale')) return 'Navigated to sales';
+    if (lowerText.includes('inventory')) return 'Navigated to inventory';
+    
+    return null;
+}
+
+// Clean old activities (older than 24 hours)
+function cleanOldActivities() {
+    const oneDayAgo = new Date();
+    oneDayAgo.setDate(oneDayAgo.getDate() - 1);
+    
+    userActivities = userActivities.filter(activity => 
+        new Date(activity.timestamp) > oneDayAgo
+    );
+    
+    localStorage.setItem('userActivities', JSON.stringify(userActivities));
+}
+
+// Update time display for activities
+function updateActivityTimes() {
+    userActivities.forEach(activity => {
+        const now = new Date();
+        const activityTime = new Date(activity.timestamp);
+        const diffMs = now - activityTime;
+        const diffMins = Math.floor(diffMs / 60000);
+        const diffHours = Math.floor(diffMs / 3600000);
+        
+        if (diffMins < 1) {
+            activity.time = 'Just now';
+        } else if (diffMins < 60) {
+            activity.time = `${diffMins} minute${diffMins > 1 ? 's' : ''} ago`;
+        } else if (diffHours < 24) {
+            activity.time = `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+        } else {
+            activity.time = 'Yesterday';
+        }
+    });
+}
+
+// Display user activities (product & sales focused)
+function displayUserActivities() {
+    const activityList = document.getElementById('activityList');
+    const currentUser = sessionStorage.getItem('user_name') || localStorage.getItem('username') || 'You';
+    
+    // Update time displays
+    updateActivityTimes();
+    
+    // Filter activities for current user and product/sales only
+    const userSpecificActivities = userActivities.filter(activity => 
+        activity.user === currentUser && 
+        (activity.type === 'product' || activity.type === 'sale' || activity.type === 'inventory' || activity.type === 'transaction' || activity.type === 'login')
+    ).slice(0, 8);
+    
+    if (userSpecificActivities.length === 0) {
+        activityList.innerHTML = '<div class="no-activities">No product or sales activity yet</div>';
+        return;
+    }
+    
+    activityList.innerHTML = userSpecificActivities.map(activity => {
+        const icon = getActivityIcon(activity.type);
+        return `
+            <div class="activity-item">
+                <div class="activity-avatar">${currentUser.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}</div>
+                <div class="activity-details">
+                    <div class="activity-user">${icon} ${activity.action}</div>
+                    <div class="activity-time">${activity.time}</div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+// Get icon for activity type
+function getActivityIcon(type) {
+    const icons = {
+        'product': '📦',
+        'sale': '💰',
+        'inventory': '📋',
+        'transaction': '🧾',
+        'login': '🔑',
+        'navigation': '📍'
+    };
+    return icons[type] || '📌';
+}
+
+// Load and display user activities (updated function)
+async function loadEmployeeActivity() {
+    // Initialize tracking if not already done
+    if (userActivities.length === 0) {
+        initializeActivityTracking();
+    }
+    
+    // Display activities
+    displayUserActivities();
+    
+    // Update times every 30 seconds
+    setInterval(() => {
+        displayUserActivities();
+    }, 30000);
+}
+
+</script>
+{% endblock %}

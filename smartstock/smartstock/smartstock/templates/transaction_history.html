@@ -1,0 +1,570 @@
+{% extends "base.html" %}
+
+{% block title %}Transaction History - Smart Inventory Management System{% endblock %}
+
+{% block content %}
+<div class="transaction-history-container">
+    <div class="page-header">
+        <h1>Transaction History</h1>
+        <p>View and audit all stock changes and transactions</p>
+    </div>
+
+    <!-- Filters -->
+    <div class="filters-section">
+        <div class="row">
+            <div class="col-md-3">
+                <label for="startDate" class="form-label">Start Date</label>
+                <input type="date" class="form-control" id="startDate">
+            </div>
+            <div class="col-md-3">
+                <label for="endDate" class="form-label">End Date</label>
+                <input type="date" class="form-control" id="endDate">
+            </div>
+            <div class="col-md-3">
+                <label for="productFilter" class="form-label">Product</label>
+                <select class="form-select" id="productFilter">
+                    <option value="">All Products</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="transactionTypeFilter" class="form-label">Transaction Type</label>
+                <select class="form-select" id="transactionTypeFilter">
+                    <option value="">All Types</option>
+                    <option value="stock_in">Stock In</option>
+                    <option value="stock_out">Stock Out</option>
+                </select>
+            </div>
+        </div>
+        <div class="mt-3">
+            <button class="btn btn-primary" onclick="filterTransactions()">
+                <i class="fas fa-filter"></i> Apply Filters
+            </button>
+            <button class="btn btn-secondary" onclick="clearFilters()">
+                <i class="fas fa-times"></i> Clear Filters
+            </button>
+            <button class="btn btn-success" onclick="exportTransactions()">
+                <i class="fas fa-download"></i> Export
+            </button>
+        </div>
+    </div>
+
+    <!-- Transactions Table -->
+    <div class="table-container">
+        <table class="transactions-table" id="transactionsTable">
+            <thead>
+                <tr>
+                    <th>Date & Time</th>
+                    <th>Transaction ID</th>
+                    <th>Type</th>
+                    <th>Product Name</th>
+                    <th>SKU</th>
+                    <th>Quantity</th>
+                    <th>Unit Price</th>
+                    <th>Total Amount</th>
+                    <th>Customer/User</th>
+                    <th>Payment Method</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="transactionsTableBody">
+                <!-- Transactions will be loaded here -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="summary-section">
+        <div class="row">
+            <div class="col-md-3">
+                <div class="summary-card">
+                    <h6>Total Transactions</h6>
+                    <h3 id="totalTransactions">0</h3>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="summary-card stock-in">
+                    <h6>Total Stock In</h6>
+                    <h3 id="totalStockIn">0</h3>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="summary-card stock-out">
+                    <h6>Total Stock Out</h6>
+                    <h3 id="totalStockOut">0</h3>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="summary-card">
+                    <h6>Unique Products</h6>
+                    <h3 id="uniqueProducts">0</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let transactions = [];
+let products = [];
+
+// Load transactions and products
+async function loadData() {
+    try {
+        // Load transactions
+        const transactionsResponse = await fetch('/api/transactions');
+        const transactionsData = await transactionsResponse.json();
+        
+        // Use sample data if API fails or for demo
+        transactions = transactionsData.transactions || getSampleTransactions();
+        
+        // Load products for filter
+        const productsResponse = await fetch('/api/products');
+        const productsData = await productsResponse.json();
+        products = productsData.products || getSampleProducts();
+        
+        displayTransactions(transactions);
+        populateProductFilter();
+        updateSummary();
+    } catch (error) {
+        console.error('Error loading data:', error);
+        // Use sample data as fallback
+        transactions = getSampleTransactions();
+        products = getSampleProducts();
+        displayTransactions(transactions);
+        populateProductFilter();
+        updateSummary();
+    }
+}
+
+// Sample transaction data for demo
+function getSampleTransactions() {
+    return [
+        {
+            id: 'TXN001',
+            date: '2024-03-23',
+            time: '10:30 AM',
+            type: 'sale',
+            product_name: 'Laptop Dell XPS 13',
+            sku: 'LAP-001',
+            quantity: 1,
+            unit_price: 999.99,
+            total_amount: 1099.99,
+            customer_name: 'John Doe',
+            payment_method: 'Credit Card',
+            status: 'completed'
+        },
+        {
+            id: 'TXN002',
+            date: '2024-03-23',
+            time: '09:45 AM',
+            type: 'sale',
+            product_name: 'Wireless Mouse Logitech',
+            sku: 'MOU-001',
+            quantity: 3,
+            unit_price: 29.99,
+            total_amount: 89.97,
+            customer_name: 'Jane Smith',
+            payment_method: 'Cash',
+            status: 'completed'
+        },
+        {
+            id: 'TXN003',
+            date: '2024-03-23',
+            time: '08:30 AM',
+            type: 'sale',
+            product_name: 'Mechanical Keyboard',
+            sku: 'KEY-001',
+            quantity: 5,
+            unit_price: 79.99,
+            total_amount: 399.95,
+            customer_name: 'Mike Johnson',
+            payment_method: 'UPI',
+            status: 'completed'
+        },
+        {
+            id: 'STK001',
+            date: '2024-03-22',
+            time: '02:00 PM',
+            type: 'stock_in',
+            product_name: 'Laptop Dell XPS 13',
+            sku: 'LAP-001',
+            quantity: 10,
+            unit_price: 850.00,
+            total_amount: 8500.00,
+            customer_name: 'Admin User',
+            payment_method: 'N/A',
+            status: 'completed'
+        },
+        {
+            id: 'STK002',
+            date: '2024-03-22',
+            time: '11:30 AM',
+            type: 'stock_out',
+            product_name: 'Monitor 24"',
+            sku: 'MON-001',
+            quantity: 2,
+            unit_price: 250.00,
+            total_amount: 500.00,
+            customer_name: 'Warranty Return',
+            payment_method: 'N/A',
+            status: 'completed'
+        }
+    ];
+}
+
+// Sample products for demo
+function getSampleProducts() {
+    return [
+        { _id: '1', name: 'Laptop Dell XPS 13', sku: 'LAP-001' },
+        { _id: '2', name: 'Wireless Mouse Logitech', sku: 'MOU-001' },
+        { _id: '3', name: 'Mechanical Keyboard', sku: 'KEY-001' },
+        { _id: '4', name: 'Monitor 24"', sku: 'MON-001' }
+    ];
+}
+
+// Display transactions in table
+function displayTransactions(transactionsToDisplay) {
+    const tbody = document.getElementById('transactionsTableBody');
+    tbody.innerHTML = '';
+    
+    if (transactionsToDisplay.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="11" class="text-center">No transactions found</td></tr>';
+        return;
+    }
+    
+    transactionsToDisplay.forEach(transaction => {
+        const row = document.createElement('tr');
+        
+        // Determine transaction type styling
+        let typeClass = '';
+        let typeText = '';
+        if (transaction.type === 'sale') {
+            typeClass = 'sale';
+            typeText = 'Sale';
+        } else if (transaction.type === 'stock_in') {
+            typeClass = 'stock-in';
+            typeText = 'Stock In';
+        } else if (transaction.type === 'stock_out') {
+            typeClass = 'stock-out';
+            typeText = 'Stock Out';
+        }
+        
+        // Determine status styling
+        let statusClass = '';
+        if (transaction.status === 'completed') {
+            statusClass = 'completed';
+        } else if (transaction.status === 'pending') {
+            statusClass = 'pending';
+        } else if (transaction.status === 'cancelled') {
+            statusClass = 'cancelled';
+        }
+        
+        row.innerHTML = `
+            <td>${transaction.date} ${transaction.time}</td>
+            <td><strong>${transaction.id}</strong></td>
+            <td><span class="transaction-type ${typeClass}">${typeText}</span></td>
+            <td>${transaction.product_name}</td>
+            <td>${transaction.sku}</td>
+            <td>${transaction.quantity}</td>
+            <td>₹${transaction.unit_price.toFixed(2)}</td>
+            <td><strong>₹${transaction.total_amount.toFixed(2)}</strong></td>
+            <td>${transaction.customer_name}</td>
+            <td>${transaction.payment_method}</td>
+            <td><span class="status ${statusClass}">${transaction.status}</span></td>
+            <td>
+                <button class="btn btn-sm btn-outline-primary" onclick="viewTransaction('${transaction.id}')">
+                    <i class="fas fa-eye"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-secondary" onclick="printTransaction('${transaction.id}')">
+                    <i class="fas fa-print"></i>
+                </button>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+// Populate product filter dropdown
+function populateProductFilter() {
+    const productFilter = document.getElementById('productFilter');
+    
+    // Clear existing options except "All Products"
+    productFilter.innerHTML = '<option value="">All Products</option>';
+    
+    // Add product options
+    products.forEach(product => {
+        const option = document.createElement('option');
+        option.value = product._id;
+        option.textContent = `${product.name} (${product.sku})`;
+        productFilter.appendChild(option);
+    });
+}
+
+// Filter transactions
+function filterTransactions() {
+    const startDate = document.getElementById('startDate').value;
+    const endDate = document.getElementById('endDate').value;
+    const productId = document.getElementById('productFilter').value;
+    const transactionType = document.getElementById('transactionTypeFilter').value;
+    
+    let filteredTransactions = transactions;
+    
+    if (startDate && endDate) {
+        filteredTransactions = filteredTransactions.filter(t => 
+            t.date >= startDate && t.date <= endDate
+        );
+    }
+    
+    if (productId) {
+        filteredTransactions = filteredTransactions.filter(t => 
+            t.product_id === productId
+        );
+    }
+    
+    if (transactionType) {
+        filteredTransactions = filteredTransactions.filter(t => 
+            t.transaction_type === transactionType
+        );
+    }
+    
+    displayTransactions(filteredTransactions);
+    updateSummary(filteredTransactions);
+}
+
+// Clear filters
+function clearFilters() {
+    document.getElementById('startDate').value = '';
+    document.getElementById('endDate').value = '';
+    document.getElementById('productFilter').value = '';
+    document.getElementById('transactionTypeFilter').value = '';
+    
+    displayTransactions(transactions);
+    updateSummary();
+}
+
+// Update summary cards
+function updateSummary(transactionsToSummarize = transactions) {
+    const totalTransactions = transactionsToSummarize.length;
+    const totalStockIn = transactionsToSummarize
+        .filter(t => t.transaction_type === 'stock_in')
+        .reduce((sum, t) => sum + t.quantity, 0);
+    const totalStockOut = transactionsToSummarize
+        .filter(t => t.transaction_type === 'stock_out')
+        .reduce((sum, t) => sum + t.quantity, 0);
+    const uniqueProducts = new Set(transactionsToSummarize.map(t => t.product_id)).size;
+    
+    document.getElementById('totalTransactions').textContent = totalTransactions;
+    document.getElementById('totalStockIn').textContent = totalStockIn;
+    document.getElementById('totalStockOut').textContent = totalStockOut;
+    document.getElementById('uniqueProducts').textContent = uniqueProducts;
+}
+
+// Export transactions to CSV
+function exportTransactions() {
+    let csv = 'Date,Product Name,SKU,Transaction Type,Quantity,Previous Stock,New Stock,Reason\n';
+    
+    transactions.forEach(transaction => {
+        const transactionTypeText = transaction.transaction_type === 'stock_in' ? 'Stock In' : 'Stock Out';
+        csv += `${transaction.date},${transaction.product_name},${transaction.product_sku},${transactionTypeText},${transaction.quantity},${transaction.previous_stock},${transaction.new_stock},${transaction.reason}\n`;
+    });
+    
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `transactions_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+}
+
+// View transaction details
+function viewTransaction(transactionId) {
+    const transaction = transactions.find(t => t.id === transactionId);
+    if (transaction) {
+        alert(`Transaction Details:\n\nID: ${transaction.id}\nType: ${transaction.type}\nProduct: ${transaction.product_name}\nQuantity: ${transaction.quantity}\nTotal: ₹${transaction.total_amount.toFixed(2)}\nCustomer: ${transaction.customer_name}\nPayment: ${transaction.payment_method}\nStatus: ${transaction.status}`);
+    }
+}
+
+// Print transaction
+function printTransaction(transactionId) {
+    const transaction = transactions.find(t => t.id === transactionId);
+    if (transaction) {
+        window.print();
+    }
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+    loadData();
+    
+    // Set today's date as default end date
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('endDate').value = today;
+});
+</script>
+
+<style>
+.transaction-history-container {
+    padding: 20px;
+}
+
+.page-header {
+    margin-bottom: 30px;
+}
+
+.page-header h1 {
+    color: #2c3e50;
+    margin-bottom: 5px;
+}
+
+.page-header p {
+    color: #7f8c8d;
+    margin: 0;
+}
+
+.filters-section {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 30px;
+}
+
+.table-container {
+    background: white;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    margin-bottom: 30px;
+}
+
+.transactions-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.transactions-table th {
+    background: #3498db;
+    color: white;
+    padding: 15px;
+    text-align: left;
+    font-weight: 600;
+}
+
+.transactions-table td {
+    padding: 12px 15px;
+    border-bottom: 1px solid #eee;
+}
+
+.transactions-table tr:hover {
+    background: #f8f9fa;
+}
+
+.transaction-type {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.transaction-type.sale {
+    background: #d1ecf1;
+    color: #0c5460;
+}
+
+.transaction-type.stock-in {
+    background: #d4edda;
+    color: #155724;
+}
+
+.transaction-type.stock-out {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.status {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.status.completed {
+    background: #d4edda;
+    color: #155724;
+}
+
+.status.pending {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.status.cancelled {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.btn-sm {
+    padding: 4px 8px;
+    font-size: 12px;
+    margin-right: 4px;
+}
+
+.btn-outline-primary {
+    border: 1px solid #007bff;
+    color: #007bff;
+    background: transparent;
+}
+
+.btn-outline-primary:hover {
+    background: #007bff;
+    color: white;
+}
+
+.btn-outline-secondary {
+    border: 1px solid #6c757d;
+    color: #6c757d;
+    background: transparent;
+}
+
+.btn-outline-secondary:hover {
+    background: #6c757d;
+    color: white;
+}
+
+.summary-section {
+    margin-top: 30px;
+}
+
+.summary-card {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    border-left: 4px solid #3498db;
+}
+
+.summary-card.stock-in {
+    border-left-color: #28a745;
+}
+
+.summary-card.stock-out {
+    border-left-color: #dc3545;
+}
+
+.summary-card h6 {
+    color: #7f8c8d;
+    margin-bottom: 10px;
+    font-weight: 500;
+}
+
+.summary-card h3 {
+    color: #2c3e50;
+    margin: 0;
+    font-weight: 700;
+}
+</style>
+{% endblock %}

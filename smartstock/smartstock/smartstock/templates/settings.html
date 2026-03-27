@@ -1,0 +1,1352 @@
+{% extends "base.html" %}
+
+{% block title %}Settings - Smart Inventory Management System{% endblock %}
+
+{% block content %}
+<div class="settings-container">
+    <div class="page-header">
+        <h1>Settings</h1>
+        <p>Configure your system preferences</p>
+    </div>
+
+    <div class="settings-layout">
+        <!-- Settings Navigation -->
+        <div class="settings-nav">
+            <button class="nav-item active" data-tab="shop">
+                <i class="fas fa-store"></i>
+                <span>Shop Details</span>
+            </button>
+            <button class="nav-item" data-tab="profile">
+                <i class="fas fa-user"></i>
+                <span>Profile</span>
+            </button>
+            <button class="nav-item" data-tab="alerts">
+                <i class="fas fa-bell"></i>
+                <span>Alerts</span>
+            </button>
+            <button class="nav-item" data-tab="system">
+                <i class="fas fa-cog"></i>
+                <span>System</span>
+            </button>
+        </div>
+
+        <!-- Settings Content -->
+        <div class="settings-content">
+            <!-- Shop Details Tab -->
+            <div class="tab-content active" id="shop-tab">
+                <div class="settings-section">
+                    <h3>Shop Information</h3>
+                    <form id="shopForm">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="shopName">Shop Name</label>
+                                <input type="text" class="form-control" id="shopName">
+                            </div>
+                            <div class="form-group">
+                                <label for="shopOwnerName">Shop Owner Name</label>
+                                <input type="text" class="form-control" id="shopOwnerName">
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="shopEmail">Email</label>
+                                <input type="email" class="form-control" id="shopEmail" >
+                            </div>
+                            <div class="form-group">
+                                <label for="shopPhone">Phone Number</label>
+                                <input type="tel" class="form-control" id="shopPhone" >
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="gstin">GSTIN</label>
+                                <input type="text" class="form-control" id="gstin" >
+                            </div>
+                        </div>
+                        
+                        <div class="form-group full-width">
+                            <label for="shopAddress">Shop Address</label>
+                            <textarea class="form-control" id="shopAddress" rows="3"></textarea>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="city">City</label>
+                                <input type="text" class="form-control" id="city" >
+                            </div>
+                            <div class="form-group">
+                                <label for="state">State</label>
+                                <input type="text" class="form-control" id="state" >
+                            </div>
+                            <div class="form-group">
+                                <label for="pincode">Pincode</label>
+                                <input type="text" class="form-control" id="pincode" >
+                            </div>
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">Save Shop Details</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Profile Tab -->
+            <div class="tab-content" id="profile-tab">
+                <div class="settings-section">
+                    <h3>Profile Picture</h3>
+                    <div class="profile-image-section">
+                        <div class="current-profile-image">
+                            <img id="currentProfileImage" src="{{ user.profile_image or url_for('static', filename='default.png') }}">                            
+                            <div class="image-overlay">
+                                <button type="button" class="btn btn-sm btn-primary" onclick="document.getElementById('profileImageInput').click()">
+                                    <i class="fas fa-camera"></i> Change Photo
+                                </button>
+                            </div>
+                        </div>
+                        <input type="file" id="profileImageInput" accept="image/*" style="display: none;" onchange="previewProfileImage(event)">
+                        <div class="image-info">
+                            <p class="text-muted">Upload a profile picture (JPG, PNG, GIF)</p>
+                            <p class="text-small">Maximum file size: 2MB</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="settings-section">
+                    <h3>Personal Information</h3>
+                    <form id="profileForm">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="fullName">Full Name</label>
+                                <input type="text" class="form-control" id="fullName" value="{{ user.full_name or user.username }}">
+                            </div>
+                            <div class="form-group">
+                                <label for="username">Username</label>
+                                <input type="text" class="form-control" id="username" value="{{ user.username }}" readonly>
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="email">Email</label>
+                                <input type="email" class="form-control" id="email" value="{{ user.email }}">
+                            </div>
+                            <div class="form-group">
+                                <label for="phone">Phone</label>
+                                <input type="tel" class="form-control" id="phone" value="{{ user.contactNumber }}">
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="role">Role</label>
+                                <select class="form-control" id="role">
+                                    <option value="admin" {% if user.role == "admin" %}selected{% endif %}>Administrator</option>
+                                    <option value="manager" {% if user.role == "manager" %}selected{% endif %}>Manager</option>
+                                    <option value="staff" {% if user.role == "staff" %}selected{% endif %}>Staff</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="department">Department</label>
+                                <select class="form-control" id="department">
+                                    <option value="inventory" {% if user.department == "inventory" %}selected{% endif %}>Inventory</option>
+                                    <option value="sales" {% if user.department == "sales" %}selected{% endif %}>Sales</option>
+                                    <option value="purchasing" {% if user.department == "purchasing" %}selected{% endif %}>Purchasing</option>
+                                    <option value="management" {% if user.department == "management" %}selected{% endif %}>Management</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">Update Profile</button>
+                        </div>
+                    </form>
+                </div>
+                
+            </div>
+
+            <!-- Alerts Tab -->
+            <div class="tab-content" id="alerts-tab">
+                <div class="settings-section">
+                    <h3>Alert Preferences</h3>
+                    <form id="alertsForm">
+                        <div class="alert-settings">
+                            <div class="setting-item">
+                                <div class="setting-info">
+                                    <h4>Low Stock Alerts</h4>
+                                    <p>Get notified when products are running low on stock</p>
+                                </div>
+                                <div class="setting-control">
+                                    <label class="switch">
+                                        <input type="checkbox" id="lowStockAlerts" checked>
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div class="setting-item">
+                                <div class="setting-info">
+                                    <h4>Out of Stock Alerts</h4>
+                                    <p>Immediate notifications when products go out of stock</p>
+                                </div>
+                                <div class="setting-control">
+                                    <label class="switch">
+                                        <input type="checkbox" id="outOfStockAlerts" checked>
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div class="setting-item">
+                                <div class="setting-info">
+                                    <h4>Sales Alerts</h4>
+                                    <p>Notifications for new sales and transactions</p>
+                                </div>
+                                <div class="setting-control">
+                                    <label class="switch">
+                                        <input type="checkbox" id="salesAlerts">
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div class="setting-item">
+                                <div class="setting-info">
+                                    <h4>Email Notifications</h4>
+                                    <p>Receive alert summaries via email</p>
+                                </div>
+                                <div class="setting-control">
+                                    <label class="switch">
+                                        <input type="checkbox" id="emailNotifications" checked>
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">Save Alert Settings</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- System Tab -->
+            <div class="tab-content" id="system-tab">
+                <div class="settings-section">
+                    <h3>System Preferences</h3>
+                    <form id="systemForm">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="currency">Default Currency</label>
+                                <select class="form-select" id="currency">
+                                    <option value="INR" selected>INR (₹)</option>
+                                    <option value="USD">USD ($)</option>
+                                    <option value="EUR">EUR (€)</option>
+                                    <option value="GBP">GBP (£)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="timezone">Timezone</label>
+                                <select class="form-select" id="timezone">
+                                    <option value="UTC" selected>UTC</option>
+                                    <option value="EST">EST</option>
+                                    <option value="PST">PST</option>
+                                    <option value="IST">IST</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="dateFormat">Date Format</label>
+                                <select class="form-select" id="dateFormat">
+                                    <option value="MM/DD/YYYY" selected>MM/DD/YYYY</option>
+                                    <option value="DD/MM/YYYY">DD/MM/YYYY</option>
+                                    <option value="YYYY-MM-DD">YYYY-MM-DD</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="language">Language</label>
+                                <select class="form-select" id="language">
+                                    <option value="en" selected>English</option>
+                                    <option value="te">తెలుగు (Telugu)</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button type="submit" class="color-save-btn">Save</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+
+async function loadSettings() {
+    try {
+        const res = await fetch("/api/settings");
+        const data = await res.json();
+
+        document.getElementById("shopName").value = data.shop_name || "";
+        document.getElementById("shopOwnerName").value = data.owner_name || "";
+        document.getElementById("shopEmail").value = data.email || "";
+        document.getElementById("shopPhone").value = data.phone || "";
+        document.getElementById("gstin").value = data.gstin || "";
+        document.getElementById("shopAddress").value = data.address || "";
+        document.getElementById("city").value = data.city || "";
+        document.getElementById("state").value = data.state || "";
+        document.getElementById("pincode").value = data.pincode || "";
+
+        document.getElementById("currency").value = data.currency || "INR";
+        document.getElementById("timezone").value = data.timezone || "IST";
+        document.getElementById("language").value = data.language || "en";
+
+    } catch (err) {
+        console.error("Error loading settings:", err);
+    }
+}
+
+// Form submissions
+
+document.getElementById('profileForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const data = {
+        fullName: document.getElementById("fullName").value,   // ✅ ADD THIS
+        phone: document.getElementById("phone").value,
+        role: document.getElementById("role").value,
+        department: document.getElementById("department").value
+    };
+
+    try {
+        const res = await fetch("/api/update-profile", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(data)
+        });
+
+        const result = await res.json();
+
+        showAlert("Profile updated successfully", "success");
+
+    } catch (err) {
+        showAlert("Error updating profile", "danger");
+    }
+});
+
+
+document.getElementById('alertsForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const data = {
+        lowStockAlerts: document.getElementById("lowStockAlerts").checked,
+        outOfStockAlerts: document.getElementById("outOfStockAlerts").checked,
+        salesAlerts: document.getElementById("salesAlerts").checked,
+        emailNotifications: document.getElementById("emailNotifications").checked
+    };
+
+    try {
+        await fetch("/api/alert-settings", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(data)
+        });
+
+        showAlert("Alert settings saved successfully", "success");
+
+    } catch (err) {
+        showAlert("Error saving alerts", "danger");
+    }
+});
+
+document.getElementById('systemForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const data = {
+        currency: document.getElementById("currency").value,
+        timezone: document.getElementById("timezone").value,
+        dateFormat: document.getElementById("dateFormat").value,
+        language: document.getElementById("language").value
+    };
+
+    try {
+        await fetch("/api/system-settings", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(data)
+        });
+
+        showAlert("System settings saved successfully", "success");
+        
+        // Update currency globally across all pages
+        updateGlobalCurrency(data.currency);
+        
+        // Save to localStorage for persistence
+        localStorage.setItem('selectedCurrency', data.currency);
+        
+        // Update currency symbols on current page
+        updateCurrencySymbols(data.currency);
+
+    } catch (err) {
+        showAlert("Error saving system settings", "danger");
+    }
+});
+
+const currencyRates = {
+    INR: 1,
+    USD: 0.012,
+    EUR: 0.011,
+    GBP: 0.0095
+};
+
+function convertPrice(amount, from = "INR", to = "INR") {
+    return (amount / currencyRates[from]) * currencyRates[to];
+}
+
+// Global Currency Update Functions
+function updateGlobalCurrency(currency) {
+    const currencySymbols = {
+        'INR': '₹',
+        'USD': '$',
+        'EUR': '€',
+        'GBP': '£'
+    };
+    
+    // Store globally
+    window.currentCurrency = currency;
+    window.currentCurrencySymbol = currencySymbols[currency];
+    
+    // Save to localStorage
+    localStorage.setItem('selectedCurrency', currency);
+    localStorage.setItem('selectedCurrencySymbol', currencySymbols[currency]);
+    
+    // Update all currency symbols on the page
+    document.querySelectorAll('.currency-symbol, [data-currency-symbol]').forEach(element => {
+        element.textContent = currencySymbols[currency] || '$';
+    });
+    
+    // Update all price displays
+    document.querySelectorAll('.price-display, .amount, .total-amount, .price, .cost').forEach(element => {
+        const currentPrice = element.textContent || element.getAttribute('data-base-price');
+        if (currentPrice) {
+            const numericPrice = parseFloat(currentPrice.replace(/[^0-9.-]/g, ''));
+            if (!isNaN(numericPrice)) {
+                element.textContent = formatCurrency(numericPrice, currency);
+            }
+        }
+    });
+    
+    // Update any element with currency attribute
+    document.querySelectorAll('[data-currency]').forEach(element => {
+        element.setAttribute('data-currency', currency);
+    });
+    
+    // Update page title or meta if needed
+    updatePageCurrency(currency);
+    
+    // Trigger custom event for other scripts
+    const currencyChangeEvent = new CustomEvent('currencyChanged', {
+        detail: { currency: currency, symbol: currencySymbols[currency] }
+    });
+    document.dispatchEvent(currencyChangeEvent);
+    
+    console.log(` Currency updated globally to: ${currency} (${currencySymbols[currency]})`);
+}
+
+function updateCurrencySymbols(currency) {
+    const symbols = {
+        INR: "₹",
+        USD: "$",
+        EUR: "€",
+        GBP: "£"
+    };
+
+    const selectedCurrency = currency;
+    const symbol = symbols[selectedCurrency];
+
+    document.querySelectorAll(".price").forEach(el => {
+        let original = parseFloat(el.getAttribute("data-original"));
+
+        if (!original) {
+            original = parseFloat(el.innerText.replace(/[^\d.]/g, ""));
+            el.setAttribute("data-original", original);
+        }
+
+        const converted = convertPrice(original, "INR", selectedCurrency);
+        el.innerText = symbol + " " + converted.toFixed(2);
+    });
+}
+
+function formatCurrency(amount, currency) {
+    const currencySymbols = {
+        'INR': '₹',
+        'USD': '$',
+        'EUR': '€',
+        'GBP': '£'
+    };
+    
+    const symbol = currencySymbols[currency] || '$';
+    const formattedAmount = parseFloat(amount).toFixed(2);
+    
+    return `${symbol}${formattedAmount}`;
+}
+
+function updatePageCurrency(currency) {
+    // Update page title if it contains currency info
+    const title = document.querySelector('title');
+    if (title && title.textContent.includes('Inventory')) {
+        // Could update title based on currency if needed
+    }
+    
+    // Update any meta tags
+    const metaCurrency = document.querySelector('meta[name="currency"]');
+    if (metaCurrency) {
+        metaCurrency.setAttribute('content', currency);
+    }
+}
+
+// Load saved currency on page load
+function loadSavedCurrency() {
+    const savedCurrency = localStorage.getItem('selectedCurrency') || 'INR';
+    const savedSymbol = localStorage.getItem('selectedCurrencySymbol') || '₹';
+    
+    // Set global variables
+    window.currentCurrency = savedCurrency;
+    window.currentCurrencySymbol = savedSymbol;
+    
+    const currencySelect = document.getElementById('currency');
+    if (currencySelect) {
+        currencySelect.value = savedCurrency;
+    }
+    
+    // Apply currency immediately on page load
+    updateGlobalCurrency(savedCurrency);
+}
+
+// Apply language function
+function applyLanguage(language) {
+    if (language === 'te') {
+        // Telugu translations
+        document.documentElement.lang = 'te';
+        updateUIText('te');
+        console.log('Language changed to Telugu');
+    } else {
+        // English (default)
+        document.documentElement.lang = 'en';
+        updateUIText('en');
+        console.log('Language changed to English');
+    }
+    
+    // Also apply global translations if available
+    if (window.applyGlobalTranslations) {
+        window.applyGlobalTranslations(language);
+    }
+}
+
+// Update UI text function
+function updateUIText(language) {
+    const t = window.translations ? window.translations[language] : {};
+    
+    // Update navigation items
+    const navItems = document.querySelectorAll('.settings-nav .nav-item span');
+    if (navItems[0] && t.shopDetails) navItems[0].textContent = t.shopDetails;
+    if (navItems[1] && t.profile) navItems[1].textContent = t.profile;
+    if (navItems[2] && t.alerts) navItems[2].textContent = t.alerts;
+    if (navItems[3] && t.system) navItems[3].textContent = t.system;
+    
+    // Update page header
+    const pageTitle = document.querySelector('.page-header h1');
+    if (pageTitle && t.settings) pageTitle.textContent = t.settings;
+    
+    const pageDesc = document.querySelector('.page-header p');
+    if (pageDesc) pageDesc.textContent = 'Configure your system preferences';
+    
+    // Update system tab
+    const systemTabTitle = document.querySelector('#system-tab .settings-section h3');
+    if (systemTabTitle && t.systemPreferences) systemTabTitle.textContent = t.systemPreferences;
+    
+    // Update labels
+    const labels = {
+        'currency': t.defaultCurrency,
+        'timezone': t.timezone,
+        'dateFormat': t.dateFormat,
+        'language': t.language
+    };
+    
+    Object.keys(labels).forEach(id => {
+        const label = document.querySelector(`label[for="${id}"]`);
+        if (label && labels[id]) label.textContent = labels[id];
+    });
+    
+    // Update save button
+    const saveBtn = document.querySelector('#system-tab .btn-primary');
+    if (saveBtn) saveBtn.textContent = t.saveSystemSettings;
+}
+
+async function loadAlertSettings() {
+    try {
+        const res = await fetch("/api/alert-settings");
+        const data = await res.json();
+
+        document.getElementById("lowStockAlerts").checked = data.low_stock ?? true;
+        document.getElementById("outOfStockAlerts").checked = data.out_of_stock ?? true;
+        document.getElementById("salesAlerts").checked = data.sales ?? false;
+        document.getElementById("emailNotifications").checked = data.email ?? true;
+
+    } catch (err) {
+        console.log("Error loading alert settings");
+    }
+}
+
+async function loadSystemSettings() {
+    try {
+        const res = await fetch("/api/system-settings");
+        const data = await res.json();
+
+        document.getElementById("currency").value = data.currency || "INR";
+        document.getElementById("timezone").value = data.timezone || "IST";
+        document.getElementById("dateFormat").value = data.date_format || "MM/DD/YYYY";
+        document.getElementById("language").value = data.language || "en";
+
+    } catch (err) {
+        console.log("Error loading system settings");
+    }
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    // ✅ Load settings from DB
+    loadSettings();
+    loadAlertSettings();
+    loadSystemSettings();
+    
+    // ✅ Load saved currency
+    loadSavedCurrency();
+
+    const buttons = document.querySelectorAll('.nav-item');
+    const tabs = document.querySelectorAll('.tab-content');
+
+    buttons.forEach(button => {
+        button.addEventListener('click', () => {
+
+            const tabName = button.getAttribute('data-tab');
+
+            // Remove active from all buttons
+            buttons.forEach(btn => btn.classList.remove('active'));
+
+            // Hide ALL tabs properly
+            tabs.forEach(tab => {
+                tab.style.display = 'none';
+                tab.classList.remove('active');
+            });
+
+            // Activate button
+            button.classList.add('active');
+
+            // Show selected tab
+            const activeTab = document.getElementById(tabName + "-tab");
+
+            if (activeTab) {
+                activeTab.style.display = 'block';
+                activeTab.classList.add('active');
+
+                // 🔥 FIX: scroll to top of content
+                activeTab.scrollTop = 0;
+                document.querySelector('.settings-content').scrollTop = 0;
+            }
+
+        });
+    });
+    // ✅ Load saved language
+    const savedLanguage = localStorage.getItem('selectedLanguage') || 'en';
+    document.getElementById('language').value = savedLanguage;
+    applyLanguage(savedLanguage);
+    
+    const form = document.getElementById("shopForm");
+
+    if (form) {
+        form.addEventListener("submit", async function(e) {
+            e.preventDefault();
+
+            const data = {
+                shop_name: document.getElementById("shopName").value,
+                owner_name: document.getElementById("shopOwnerName").value,
+                email: document.getElementById("shopEmail").value,
+                phone: document.getElementById("shopPhone").value,
+                gstin: document.getElementById("gstin").value,
+                address: document.getElementById("shopAddress").value,
+                city: document.getElementById("city").value,
+                state: document.getElementById("state").value,
+                pincode: document.getElementById("pincode").value,
+                currency: document.getElementById("currency").value,
+                timezone: document.getElementById("timezone").value,
+                language: document.getElementById("language").value
+            };
+
+            console.log("🚀 Sending:", data);
+
+            try {
+                const res = await fetch("/api/settings", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await res.json();
+                console.log("✅ Response:", result);
+
+                showAlert("Settings saved successfully!", "success");
+
+                // 🔥 IMPORTANT FIX (this was missing)
+                await loadSettings();
+
+            } catch (err) {
+                console.error(err);
+                showAlert("Error saving settings", "danger");
+            }
+        });
+    }
+    const languageSelect = document.getElementById('language');
+    if (languageSelect) {
+        languageSelect.addEventListener('change', function(e) {
+            const selectedLanguage = e.target.value;
+            localStorage.setItem('selectedLanguage', selectedLanguage);
+            applyLanguage(selectedLanguage);
+        });
+    }
+    
+    // Add currency change listener for real-time updates
+    const currencySelect = document.getElementById('currency');
+    if (currencySelect) {
+        currencySelect.addEventListener('change', function(e) {
+            const selectedCurrency = e.target.value;
+            localStorage.setItem('selectedCurrency', selectedCurrency);
+            updateGlobalCurrency(selectedCurrency);
+            updateCurrencySymbols(selectedCurrency);
+            console.log(`Currency changed to: ${selectedCurrency}`);
+        });
+    }
+
+});
+
+// Backup functions
+function downloadBackup() {
+    // Create sample backup data
+    const backupData = {
+        version: '1.0',
+        date: new Date().toISOString(),
+        data: {
+            products: [],
+            sales: [],
+            users: [],
+            settings: {}
+        }
+    };
+    
+    const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `smartstock_backup_${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    
+    showAlert('Backup downloaded successfully', 'success');
+}
+
+
+// Utility function
+function showAlert(message, type) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    const container = document.querySelector('.settings-container');
+    container.insertBefore(alertDiv, container.firstChild);
+    
+    setTimeout(() => {
+        alertDiv.remove();
+    }, 3000);
+}
+
+
+</script>
+
+<style>
+
+.tab-content {
+    display: none;
+    width: 100%;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+.settings-container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.settings-layout {
+    display: grid;
+    grid-template-columns: 250px 1fr;
+    gap: 2rem;
+    margin-top: 2rem;
+}
+
+.settings-nav {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3);
+    padding: 1rem 0;
+    height: fit-content;
+    position: relative;
+    overflow: hidden;
+}
+
+.settings-nav::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, rgba(255,255,255,0.1) 0%, transparent 100%);
+    pointer-events: none;
+}
+
+.nav-item {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.5rem;
+    border: none;
+    background: none;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border-left: 3px solid transparent;
+    color: rgba(255, 255, 255, 0.8);
+    font-weight: 500;
+    position: relative;
+    z-index: 1;
+}
+
+.nav-item:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+    color: white;
+    transform: translateX(3px);
+}
+
+.nav-item.active {
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0.25) 0%, rgba(255, 255, 255, 0.1) 100%);
+    color: white;
+    border-left-color: #ffffff;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.nav-item.active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: linear-gradient(180deg, #ffffff 0%, rgba(255, 255, 255, 0.6) 100%);
+    border-radius: 0 3px 3px 0;
+}
+
+.nav-item i {
+    width: 20px;
+    text-align: center;
+    font-size: 1.1rem;
+    opacity: 0.9;
+}
+
+.nav-item.active i {
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+.nav-item span {
+    font-size: 0.95rem;
+    letter-spacing: 0.3px;
+}
+
+.settings-content {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    padding: 2rem;
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+.settings-section {
+    margin-bottom: 2rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid #eee;
+}
+
+.settings-section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 20px;
+}
+
+.settings-section h3 {
+    margin-bottom: 1.5rem;
+    color: #333;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group.full-width {
+    grid-column: 1 / -1;
+}
+
+.form-group label {
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: #333;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: 1px solid #eee;
+}
+
+.alert-settings {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.setting-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    border: 1px solid #eee;
+    border-radius: 8px;
+}
+
+.setting-info h4 {
+    margin: 0 0 0.25rem 0;
+    color: #333;
+    font-size: 1rem;
+}
+
+.setting-info p {
+    margin: 0;
+    color: #666;
+    font-size: 0.9rem;
+}
+
+/* Toggle Switch */
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+    border-radius: 24px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+input:checked + .slider {
+    background-color: #4A90E2;
+}
+
+input:checked + .slider:before {
+    transform: translateX(26px);
+}
+
+/* Backup Styles */
+.backup-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.backup-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.5rem;
+    border: 1px solid #eee;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+}
+
+.backup-card:hover {
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.backup-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+
+.backup-info h4 {
+    margin: 0 0 0.5rem 0;
+    color: #333;
+}
+
+.backup-info p {
+    margin: 0 0 1rem 0;
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.backup-settings {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+/* Profile Image Styles */
+.profile-image-section {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+}
+
+.current-profile-image {
+    position: relative;
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 3px solid #007bff;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+.profile-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.image-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    cursor: pointer;
+}
+
+.current-profile-image:hover .image-overlay {
+    opacity: 1;
+}
+
+.current-profile-image:hover .profile-img {
+    transform: scale(1.05);
+}
+
+.image-info {
+    flex: 1;
+}
+
+.image-info p {
+    margin: 0 0 0.5rem 0;
+}
+
+.text-muted {
+    color: #6c757d;
+}
+
+.text-small {
+    font-size: 0.8rem;
+    color: #999;
+}
+
+/* Checkbox Styles */
+.checkbox-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.checkbox-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    font-weight: normal;
+}
+
+.checkbox-item input[type="checkbox"] {
+    width: auto;
+    margin: 0;
+}
+
+#systemForm .form-actions {
+    margin-top: 20px;
+}
+
+#system-tab .settings-section {
+    padding-bottom: 40px !important;
+}
+
+/* Color Save Button Styles */
+.color-save-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    border: none !important;
+    border-radius: 25px;
+    padding: 12px 30px !important;
+    color: white !important;
+    font-weight: 700 !important;
+    font-size: 1rem !important;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    text-shadow: none !important;
+    display: inline-block;
+    text-align: center;
+    min-width: 80px;
+}
+
+.color-save-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.color-save-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 10px rgba(102, 126, 234, 0.3);
+}
+
+@media (max-width: 768px) {
+    .settings-layout {
+        grid-template-columns: 1fr;
+    }
+    
+    .settings-nav {
+        display: flex;
+        overflow-x: auto;
+        padding: 0.5rem;
+    }
+    
+    .nav-item {
+        flex-shrink: 0;
+        white-space: nowrap;
+    }
+    
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+    
+    .backup-options {
+        grid-template-columns: 1fr;
+    }
+    
+    .setting-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    
+    .profile-image-section {
+        flex-direction: column;
+        text-align: center;
+        gap: 1rem;
+    }
+}
+</style>
+
+<script>
+// Profile Image Upload Function
+function previewProfileImage(event) {
+    const file = event.target.files[0];
+    if (file) {
+        // Check file size (2MB limit)
+        if (file.size > 2 * 1024 * 1024) {
+            alert('File size must be less than 2MB');
+            event.target.value = '';
+            return;
+        }
+        
+        // Check file type
+        if (!file.type.match('image.*')) {
+            alert('Please select an image file (JPG, PNG, GIF)');
+            event.target.value = '';
+            return;
+        }
+        
+        // Preview the image
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('currentProfileImage').src = e.target.result;
+            
+            // Show success message
+            showNotification('Profile image updated successfully!', 'success');
+            
+            // Here you would typically upload the image to server
+            uploadProfileImage(file);
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+// Upload profile image to server
+function uploadProfileImage(file) {
+    const formData = new FormData();
+    formData.append('profileImage', file);
+    
+    fetch('/api/upload-profile-image', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            console.log('Profile image uploaded successfully');
+            // Update user profile image in header if needed
+            updateUserHeaderImage(data.imageUrl);
+        } else {
+            showNotification('Failed to upload profile image', 'error');
+        }
+    })
+    .catch(error => {
+        console.log('Demo: Profile image upload simulated');
+        // Demo functionality - just show success
+        showNotification('Profile image updated (demo mode)', 'success');
+    });
+}
+
+// Update user header image
+function updateUserHeaderImage(imageUrl) {
+    const userIcon = document.querySelector('.user-dropdown i.fa-user-circle');
+    if (userIcon && imageUrl) {
+        // Replace icon with image
+        userIcon.outerHTML = `<img src="${imageUrl}" alt="User" class="user-avatar">`;
+        
+        // Add CSS for user avatar
+        if (!document.querySelector('#userAvatarStyles')) {
+            const style = document.createElement('style');
+            style.id = 'userAvatarStyles';
+            style.textContent = `
+                .user-avatar {
+                    width: 32px;
+                    height: 32px;
+                    border-radius: 50%;
+                    object-fit: cover;
+                    border: 2px solid rgba(255,255,255,0.3);
+                }
+            `;
+            document.head.appendChild(style);
+        }
+    }
+}
+
+// Show notification function
+function showNotification(message, type) {
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type} alert-dismissible fade show`;
+    notification.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    notification.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    // Add to page
+    document.body.appendChild(notification);
+    
+    // Auto remove after 3 seconds
+    setTimeout(() => {
+        notification.remove();
+    }, 3000);
+}
+
+</script>
+{% endblock %}

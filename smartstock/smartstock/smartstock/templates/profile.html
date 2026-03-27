@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="profile-container">
+
+    <div class="profile-card">
+
+        <div class="profile-header">
+            <div class="profile-avatar">
+                <i class="fas fa-user"></i>
+            </div>
+
+            <h2>{{ user.username }}</h2>
+            <p class="role">{{ user.role }}</p>
+        </div>
+
+        <div class="profile-details">
+
+            <div class="detail">
+                <label>Email</label>
+                <span>{{ user.email }}</span>
+            </div>
+
+            <div class="detail">
+                <label>Contact</label>
+                <span>{{ user.contactNumber }}</span>
+            </div>
+
+            <div class="detail">
+                <label>Shop Address</label>
+                <span>{{ user.shopAddress }}</span>
+            </div>
+
+            <div class="detail">
+                <label>City</label>
+                <span>{{ user.city }}</span>
+            </div>
+
+            <div class="detail">
+                <label>State</label>
+                <span>{{ user.state }}</span>
+            </div>
+
+            <div class="detail">
+                <label>Pincode</label>
+                <span>{{ user.pincode }}</span>
+            </div>
+
+            <div class="detail">
+                <label>GSTIN</label>
+                <span>{{ user.gstin }}</span>
+            </div>
+
+            <div class="detail">
+                <label>Last Login</label>
+                <span>{{ user.lastLogin }}</span>
+            </div>
+
+            <div class="detail">
+                <label>Total Logins</label>
+                <span>{{ user.loginCount }}</span>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

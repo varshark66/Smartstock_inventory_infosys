@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Smart Inventory Management System{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/dashboard.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/currency.css') }}" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="top-header">
+            <div class="header-left">
+                <i class="fas fa-bars menu-toggle"></i>
+                <div class="logo">
+                    <i class="fas fa-boxes"></i>
+                    <span>SMART STOCK RETAIL INVENTORY SYSTEM</span>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="digital-clock" id="digitalClock">
+                    <div class="clock-time" id="clockTime">00:00:00</div>
+                    <div class="clock-date" id="clockDate">Loading...</div>
+                </div>
+                <div class="notification-dropdown">
+                    <div class="notification-icon" onclick="toggleNotifications()">
+                        <i class="fas fa-bell"></i>
+                        <span class="badge" id="notificationBadge">3</span>
+                    </div>
+                    <div class="notification-menu" id="notificationMenu">
+                        <div class="notification-header">
+                            <h6>Notifications</h6>
+                            <a href="#" onclick="clearAllNotifications()">Clear All</a>
+                        </div>
+                        <div class="notification-list" id="notificationList">
+                            <div class="notification-item unread">
+                                <div class="notification-content">
+                                    <p><strong>Low Stock Alert</strong></p>
+                                    <p>Product A is running low on stock</p>
+                                    <small>2 minutes ago</small>
+                                </div>
+                            </div>
+                            <div class="notification-item unread">
+                                <div class="notification-content">
+                                    <p><strong>New Product Added</strong></p>
+                                    <p>Product B has been added to inventory</p>
+                                    <small>5 minutes ago</small>
+                                </div>
+                            </div>
+                            <div class="notification-item">
+                                <div class="notification-content">
+                                    <p><strong>Sales Report Available</strong></p>
+                                    <p>Monthly sales report is ready</p>
+                                    <small>1 hour ago</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="notification-footer">
+                            <a href="/alerts">View All Alerts</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="user-dropdown" onclick="window.location.href='/profile'">
+                    <i class="fas fa-user-circle"></i>
+                    <span id="headerUserName">Guest</span>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="language-switcher">
+                    <select id="headerLanguageSelect" onchange="changeLanguage(this.value)" style="padding: 5px; border-radius: 5px; border: 1px solid #ddd; background: white;">
+                        <option value="en">English</option>
+                        <option value="te">తెలుగు</option>
+                    </select>
+                </div>
+                <button class="logout-btn">
+                    <i class="fas fa-sign-out-alt"></i>
+                </button>
+            </div>
+        </header>
+
+        <div class="main-content">
+            <!-- Sidebar -->
+            <aside class="sidebar">
+                <!-- User Information Section -->
+                <div class="user-info-section">
+                    <div class="user-details">
+                        <h4 class="user-name" id="sidebarUserName">Guest User</h4>
+                        <p class="user-email" id="sidebarUserEmail">guest@smartstock.com</p>
+                    </div>
+                </div>
+                
+                <nav class="sidebar-nav">
+                    <a href="/dashboard" class="nav-item {% if request.endpoint == 'dashboard' %}active{% endif %}">
+                        <i class="fas fa-tachometer-alt"></i>
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="/products" class="nav-item {% if request.endpoint == 'products' %}active{% endif %}">
+                        <i class="fas fa-box"></i>
+                        <span>Products</span>
+                    </a>
+                    <a href="/inventory" class="nav-item {% if request.endpoint == 'inventory' %}active{% endif %}">
+                        <i class="fas fa-warehouse"></i>
+                        <span>Inventory / Stock</span>
+                    </a>
+                    <a href="/sales" class="nav-item {% if request.endpoint == 'sales' %}active{% endif %}">
+                        <i class="fas fa-shopping-cart"></i>
+                        <span>Sales / Transactions</span>
+                    </a>
+                    <a href="/alerts" class="nav-item {% if request.endpoint == 'alerts' %}active{% endif %}">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <span>Alerts</span>
+                    </a>
+                    <a href="/reports" class="nav-item {% if request.endpoint == 'reports' %}active{% endif %}">
+                        <i class="fas fa-chart-bar"></i>
+                        <span>Reports</span>
+                    </a>
+                    <a href="/smart-assistant" class="nav-item {% if request.endpoint == 'smart_assistant' %}active{% endif %}">
+                        <i class="fas fa-robot"></i>
+                        <span>Smart Assistant</span>
+                    </a>
+                    <a href="/user-management" class="nav-item {% if request.endpoint == 'user_management' %}active{% endif %}">
+                        <i class="fas fa-users"></i>
+                        <span>User Management</span>
+                    </a>
+                    <a href="/settings" class="nav-item {% if request.endpoint == 'settings' %}active{% endif %}">
+                        <i class="fas fa-cog"></i>
+                        <span>Settings</span>
+                    </a>
+                </nav>
+                <div class="sidebar-footer">
+                    <p style="font-size:12px;">
+                        <a href="mailto:smartstockinventory13@gmail.com" style="color:#ccc; text-decoration:none;">
+                            smartstockinventory13@gmail.com
+                        </a>
+                    </p>
+                </div>
+            </aside>
+
+            <!-- Page Content -->
+            <main class="page-content">
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="{{ url_for('static', filename='js/currency.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+    
+    <script>
+        // Global Translation System
+        const translations = {
+            en: {
+                // Navigation
+                dashboard: 'Dashboard',
+                products: 'Products',
+                inventory: 'Inventory / Stock',
+                sales: 'Sales / Transactions',
+                alerts: 'Alerts',
+                reports: 'Reports',
+                smartAssistant: 'Smart Assistant',
+                userManagement: 'User Management',
+                settings: 'Settings',
+                
+                // Header
+                notifications: 'Notifications',
+                clearAll: 'Clear All',
+                viewAllAlerts: 'View All Alerts',
+                lowStockAlert: 'Low Stock Alert',
+                newProductAdded: 'New Product Added',
+                salesReportAvailable: 'Sales Report Available',
+                
+                // Common
+                save: 'Save',
+                cancel: 'Cancel',
+                delete: 'Delete',
+                edit: 'Edit',
+                add: 'Add',
+                search: 'Search',
+                filter: 'Filter',
+                export: 'Export',
+                import: 'Import',
+                refresh: 'Refresh',
+                loading: 'Loading...',
+                error: 'Error',
+                success: 'Success',
+                warning: 'Warning',
+                info: 'Info',
+
+                shopDetails: 'Shop Details',
+                profile: 'Profile',
+                alerts: 'Alerts',
+                system: 'System',
+                backup: 'Backup',
+                shopInformation: 'Shop Information',
+                shopName: 'Shop Name',
+                shopOwnerName: 'Shop Owner Name'
+            },
+            te: {
+                // Navigation
+                dashboard: 'డాష్‌బోర్డ్',
+                products: 'ఉత్పత్తులు',
+                inventory: 'ఇన్వెంటరీ / స్టాక్',
+                sales: 'అమ్మకాలు / లావాదేవీలు',
+                alerts: 'హెచ్చరికలు',
+                reports: 'నివేదికలు',
+                smartAssistant: 'స్మార్ట్ అసిస్టెంట్',
+                userManagement: 'వినియోగదారుల నిర్వహణ',
+                settings: 'సెట్టింగ్‌లు',
+                
+                // Header
+                notifications: 'ప్రకటనలు',
+                clearAll: 'అన్నీ తీసివేయి',
+                viewAllAlerts: 'అన్ని హెచ్చరికలు చూడండి',
+                lowStockAlert: 'తక్కువ స్టాక్ హెచ్చరిక',
+                newProductAdded: 'కొత్త ఉత్పత్తి జోడించబడింది',
+                salesReportAvailable: 'అమ్మకాల నివేదిక అందుబాటులో ఉంది',
+                
+                // Common
+                save: 'సేవ్ చేయి',
+                cancel: 'రద్దు చేయి',
+                delete: 'తొలగించు',
+                edit: 'సవరించు',
+                add: 'జోడించు',
+                search: 'వెతకండి',
+                filter: 'వడపోయండి',
+                export: 'ఎగుమతి చేయండి',
+                import: 'దిగుమతి చేయండి',
+                refresh: 'రిఫ్రెష్ చేయండి',
+                loading: 'లోడ్ అవుతోంది...',
+                error: 'లోపం',
+                success: 'విజయం',
+                warning: 'హెచ్చరిక',
+                info: 'సమాచారం',
+
+                shopDetails: 'దుకాన వివరాలు',
+                profile: 'ప్రొఫైల్',
+                alerts: 'హెచ్చరికలు',
+                system: 'సిస్టమ్',
+                backup: 'బ్యాకప్',
+                shopInformation: 'దుకాన సమాచారం',
+                shopName: 'దుకాన పేరు',
+                shopOwnerName: 'దుకాన యజమాని పేరు'
+            }
+        };
+
+        // Get current language
+        function getCurrentLanguage() {
+            return localStorage.getItem('selectedLanguage') || 'en';
+        }
+
+        // Apply translations globally
+        function applyGlobalTranslations(language) {
+            const t = translations[language];
+            
+            // Update HTML lang attribute
+            document.documentElement.lang = language === 'te' ? 'te' : 'en';
+            
+            // Update navigation items using data attributes or specific selectors
+            const navTranslations = {
+                'Dashboard': t.dashboard,
+                'Products': t.products,
+                'Inventory / Stock': t.inventory,
+                'Sales / Transactions': t.sales,
+                'Alerts': t.alerts,
+                'Reports': t.reports,
+                'Smart Assistant': t.smartAssistant,
+                'User Management': t.userManagement,
+                'Settings': t.settings
+            };
+            
+            // Update sidebar navigation
+            document.querySelectorAll('.sidebar-nav .nav-item span').forEach(span => {
+                const originalText = span.textContent.trim();
+                if (navTranslations[originalText]) {
+                    span.textContent = navTranslations[originalText];
+                }
+            });
+            
+            // Update notification elements
+            const notificationHeader = document.querySelector('.notification-header h6');
+            if (notificationHeader && notificationHeader.textContent === 'Notifications') {
+                notificationHeader.textContent = t.notifications;
+            }
+            
+            const clearAllLink = document.querySelector('.notification-header a');
+            if (clearAllLink && clearAllLink.textContent === 'Clear All') {
+                clearAllLink.textContent = t.clearAll;
+            }
+            
+            const viewAllLink = document.querySelector('.notification-footer a');
+            if (viewAllLink && viewAllLink.textContent === 'View All Alerts') {
+                viewAllLink.textContent = t.viewAllAlerts;
+            }
+            
+            // Update notification content examples
+            document.querySelectorAll('.notification-item strong').forEach(strong => {
+                const text = strong.textContent.trim();
+                if (text === 'Low Stock Alert') strong.textContent = t.lowStockAlert;
+                else if (text === 'New Product Added') strong.textContent = t.newProductAdded;
+                else if (text === 'Sales Report Available') strong.textContent = t.salesReportAvailable;
+            });
+        }
+
+        // Initialize language on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const currentLang = getCurrentLanguage();
+            applyGlobalTranslations(currentLang);
+            
+            // Set header language selector
+            const headerLangSelect = document.getElementById('headerLanguageSelect');
+            if (headerLangSelect) {
+                headerLangSelect.value = currentLang;
+            }
+        });
+
+        // Global language change function
+        function changeLanguage(language) {
+            // Save to localStorage
+            localStorage.setItem('selectedLanguage', language);
+            
+            // Apply translations globally
+            applyGlobalTranslations(language);
+            
+            // Update header selector
+            const headerLangSelect = document.getElementById('headerLanguageSelect');
+            if (headerLangSelect) {
+                headerLangSelect.value = language;
+            }
+            
+            // Trigger storage event for other pages
+            window.dispatchEvent(new StorageEvent('storage', {
+                key: 'selectedLanguage',
+                newValue: language
+            }));
+            
+            console.log('Language changed to:', language === 'te' ? 'Telugu' : 'English');
+        }
+
+        // Listen for language changes
+        window.addEventListener('storage', function(e) {
+            if (e.key === 'selectedLanguage') {
+                applyGlobalTranslations(e.newValue || 'en');
+                
+                // Update header selector
+                const headerLangSelect = document.getElementById('headerLanguageSelect');
+                if (headerLangSelect) {
+                    headerLangSelect.value = e.newValue || 'en';
+                }
+            }
+        });
+    </script>
+    
+    <script>
+        // Smooth Page Transitions
+        document.addEventListener('DOMContentLoaded', function() {
+            // Load user data from sessionStorage
+            loadUserData();
+            
+            // Add fade-in effect to page content
+            const pageContent = document.querySelector('.page-content');
+            if (pageContent) {
+                pageContent.style.opacity = '0';
+                setTimeout(() => {
+                    pageContent.style.opacity = '1';
+                }, 100);
+            }
+            
+            // Start digital clock
+            updateDigitalClock();
+            setInterval(updateDigitalClock, 1000);
+            
+            // Smooth navigation transitions
+            const navItems = document.querySelectorAll('.nav-item');
+            navItems.forEach(item => {
+                item.addEventListener('click', function(e) {
+                    if (this.href && !this.href.includes('#')) {
+                        e.preventDefault();
+                        const href = this.href;
+                        
+                        // Fade out current page
+                        pageContent.style.opacity = '0';
+                        pageContent.style.transform = 'translateY(20px)';
+                        
+                        // Navigate after transition
+                        setTimeout(() => {
+                            window.location.href = href;
+                        }, 300);
+                    }
+                });
+            });
+            
+            // Smooth modal transitions
+            const modals = document.querySelectorAll('.modal');
+            modals.forEach(modal => {
+                modal.addEventListener('show.bs.modal', function() {
+                    const modalContent = this.querySelector('.modal-content');
+                    if (modalContent) {
+                        modalContent.style.transform = 'scale(0.9)';
+                        modalContent.style.opacity = '0';
+                        setTimeout(() => {
+                            modalContent.style.transform = 'scale(1)';
+                            modalContent.style.opacity = '1';
+                        }, 50);
+                    }
+                });
+            });
+            
+            // Smooth form transitions
+            const forms = document.querySelectorAll('form');
+            forms.forEach(form => {
+                const inputs = form.querySelectorAll('.form-control, .form-select');
+                inputs.forEach(input => {
+                    input.addEventListener('focus', function() {
+                        this.style.transform = 'scale(1.02)';
+                    });
+                    input.addEventListener('blur', function() {
+                        this.style.transform = 'scale(1)';
+                    });
+                });
+            });
+            
+            // Smooth button transitions
+            const buttons = document.querySelectorAll('.btn');
+            buttons.forEach(button => {
+                button.addEventListener('click', function() {
+                    this.style.transform = 'scale(0.95)';
+                    setTimeout(() => {
+                        this.style.transform = 'scale(1)';
+                    }, 150);
+                });
+            });
+            
+            // Load notifications on page load
+            loadNotifications();
+        });
+        
+        // Digital Clock Function
+        function updateDigitalClock() {
+            const now = new Date();
+            
+            // Format time in 12-hour format
+            let hours = now.getHours();
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12;
+            hours = hours ? hours : 12; // 0 should be 12
+            const hoursStr = String(hours).padStart(2, '0');
+            const timeString = `${hoursStr}:${minutes}:${seconds} ${ampm}`;
+            
+            // Format date without day
+            const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+            
+            const monthName = months[now.getMonth()];
+            const date = now.getDate();
+            const year = now.getFullYear();
+            
+            const dateString = `${monthName} ${date}, ${year}`;
+            
+            // Update clock display
+            const clockTime = document.getElementById('clockTime');
+            const clockDate = document.getElementById('clockDate');
+            
+            if (clockTime) clockTime.textContent = timeString;
+            if (clockDate) clockDate.textContent = dateString;
+        }
+        
+        // Load User Data Function
+        function loadUserData() {
+            const userName = sessionStorage.getItem('user_name') || 'Guest User';
+            const userEmail = sessionStorage.getItem('user_email') || 'guest@smartstock.com';
+            
+            // Update sidebar user info
+            const sidebarUserName = document.getElementById('sidebarUserName');
+            const sidebarUserEmail = document.getElementById('sidebarUserEmail');
+            
+            if (sidebarUserName) sidebarUserName.textContent = userName;
+            if (sidebarUserEmail) sidebarUserEmail.textContent = userEmail;
+            
+            // Update header user info
+            const headerUserName = document.getElementById('headerUserName');
+            if (headerUserName) headerUserName.textContent = userName.split(' ')[0] || userName;
+        }
+
+        function toggleUserMenu(event){
+            event.stopPropagation();
+
+            const menu = document.getElementById("userMenu");
+
+            if(menu){
+                menu.classList.toggle("show");
+            }
+        }
+
+        document.addEventListener("click", function(){
+            const menu = document.getElementById("userMenu");
+            if(menu){
+                menu.classList.remove("show");
+            }
+        });
+        
+        // Notification System
+        function toggleNotifications() {
+            console.log('🔔 Notification bell clicked!');
+            
+            // Load real-time alerts and update badge
+            loadRealTimeNotifications();
+            
+            // Show notification dialog instead of dropdown
+            showRealTimeNotificationDialog();
+        }
+        
+        function loadRealTimeNotifications() {
+            // Fetch real alerts from alerts API
+            fetch('/api/alerts')
+                .then(response => response.json())
+                .then(data => {
+                    const alerts = data.alerts || [];
+                    updateNotificationBadge(alerts.length);
+                    console.log(`📊 Loaded ${alerts.length} real-time notifications`);
+                })
+                .catch(error => {
+                    console.error('Error loading notifications:', error);
+                    updateNotificationBadge(0);
+                });
+        }
+        
+        function showRealTimeNotificationDialog() {
+            // Create and show real-time notification dialog
+            const existingDialog = document.getElementById('realTimeNotificationModal');
+            if (existingDialog) {
+                existingDialog.remove();
+            }
+            
+            // Create modal element
+            const modal = document.createElement('div');
+            modal.className = 'modal fade show';
+            modal.id = 'realTimeNotificationModal';
+            modal.style.display = 'block';
+            modal.innerHTML = `
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5><i class="fas fa-bell"></i> Real-Time Notifications</h5>
+                            <button type="button" class="btn-close" onclick="closeRealTimeNotificationDialog()">&times;</button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="notification-stats">
+                                <div class="stat-item">
+                                    <i class="fas fa-bell text-primary"></i>
+                                    <div>
+                                        <h4 id="realTimeTotalCount">0</h4>
+                                        <span>Total Alerts</span>
+                                    </div>
+                                </div>
+                                <div class="stat-item">
+                                    <i class="fas fa-clock text-success"></i>
+                                    <div>
+                                        <h4 id="realTimeCurrentTime">Loading...</h4>
+                                        <span>Current Time</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="notification-list" id="realTimeNotificationList">
+                                <div class="loading-notifications">
+                                    <i class="fas fa-spinner fa-spin"></i>
+                                    <p>Loading real-time notifications...</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" onclick="closeRealTimeNotificationDialog()">Close</button>
+                            <button type="button" class="btn btn-primary" onclick="refreshRealTimeNotifications()">
+                                <i class="fas fa-sync-alt"></i> Refresh
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Add to body
+            document.body.appendChild(modal);
+            
+            // Load real-time data
+            loadRealTimeNotificationData();
+            
+            // Start real-time clock
+            startRealTimeClockInDialog();
+        }
+        
+        function closeRealTimeNotificationDialog() {
+            const modal = document.getElementById('realTimeNotificationModal');
+            if (modal) {
+                modal.remove();
+            }
+        }
+        
+        function loadRealTimeNotificationData() {
+            fetch('/api/alerts')
+                .then(response => response.json())
+                .then(data => {
+                    const alerts = data.alerts || [];
+                    
+                    // Update total count
+                    const totalCountEl = document.getElementById('realTimeTotalCount');
+                    if (totalCountEl) {
+                        totalCountEl.textContent = alerts.length;
+                    }
+                    
+                    // Update notification list
+                    const notificationListEl = document.getElementById('realTimeNotificationList');
+                    if (notificationListEl && alerts.length > 0) {
+                        // Sort by time (newest first)
+                        const sortedAlerts = alerts.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+                        
+                        notificationListEl.innerHTML = sortedAlerts.slice(0, 10).map(alert => `
+                            <div class="notification-item ${alert.priority}">
+                                <div class="notification-icon">
+                                    <i class="fas fa-${alert.priority === 'critical' ? 'exclamation-circle' : alert.priority === 'high' ? 'exclamation-triangle' : 'info-circle'}"></i>
+                                </div>
+                                <div class="notification-content">
+                                    <div class="notification-header">
+                                        <strong>${alert.product_name || 'System Alert'}</strong>
+                                        <span class="notification-time">${formatRealTimeAgo(alert.created_at)}</span>
+                                    </div>
+                                    <div class="notification-message">
+                                        ${alert.message}
+                                    </div>
+                                    <div class="notification-meta">
+                                        <span class="priority-badge ${alert.priority}">${alert.priority.toUpperCase()}</span>
+                                        <span class="status-badge ${alert.status}">${alert.status.toUpperCase()}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('');
+                    } else if (notificationListEl) {
+                        notificationListEl.innerHTML = '<div class="no-notifications"><i class="fas fa-check-circle"></i><p>No real-time notifications</p></div>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading real-time notifications:', error);
+                });
+        }
+        
+        function formatRealTimeAgo(dateString) {
+            const now = new Date();
+            const alertDate = new Date(dateString);
+            
+            if (isNaN(alertDate.getTime())) {
+                return 'Invalid date';
+            }
+            
+            const diffMs = now - alertDate;
+            const diffSeconds = Math.floor(diffMs / 1000);
+            const diffMins = Math.floor(diffSeconds / 60);
+            const diffHours = Math.floor(diffMins / 60);
+            const diffDays = Math.floor(diffHours / 24);
+            
+            if (diffSeconds < 10) {
+                return 'Just now';
+            } else if (diffSeconds < 60) {
+                return `${diffSeconds} seconds ago`;
+            } else if (diffMins < 60) {
+                return `${diffMins} minute${diffMins !== 1 ? 's' : ''} ago`;
+            } else if (diffHours < 24) {
+                return `${diffHours} hour${diffHours !== 1 ? 's' : ''} ago`;
+            } else {
+                return `${diffDays} day${diffDays !== 1 ? 's' : ''} ago`;
+            }
+        }
+        
+        function startRealTimeClockInDialog() {
+            function updateClock() {
+                const now = new Date();
+                const timeString = now.toLocaleString('en-US', {
+                    weekday: 'short',
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                });
+                
+                const clockEl = document.getElementById('realTimeCurrentTime');
+                if (clockEl) {
+                    clockEl.textContent = timeString;
+                }
+            }
+            
+            // Update immediately
+            updateClock();
+            
+            // Update every second
+            setInterval(updateClock, 1000);
+        }
+        
+        function refreshRealTimeNotifications() {
+            console.log('🔄 Refreshing real-time notifications...');
+            loadRealTimeNotificationData();
+        }
+        
+        function loadNotifications() {
+            // Fetch notifications from server
+            fetch('/api/notifications')
+                .then(response => response.json())
+                .then(data => {
+                    updateNotificationBadge(data.unread_count);
+                    updateNotificationList(data.notifications);
+                })
+                .catch(error => {
+                    console.log('Using demo notifications');
+                    // Use demo notifications if API fails
+                    updateNotificationBadge(3);
+                });
+        }
+        
+        function updateNotificationBadge(count) {
+            const badge = document.getElementById('notificationBadge');
+            if (count > 0) {
+                badge.textContent = count > 99 ? '99+' : count;
+                badge.style.display = 'flex';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+        
+        function updateNotificationList(notifications) {
+            const notificationList = document.getElementById('notificationList');
+            if (notifications && notifications.length > 0) {
+                // Update with real notifications
+                notificationList.innerHTML = notifications.map(notification => `
+                    <div class="notification-item ${notification.read ? '' : 'unread'}" onclick="markAsRead('${notification.id}')">
+                        <div class="notification-content">
+                            <p><strong>${notification.title}</strong></p>
+                            <p>${notification.message}</p>
+                            <small>${notification.time_ago}</small>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+        
+        function markAsRead(notificationId) {
+            // Mark notification as read
+            fetch(`/api/notifications/${notificationId}/read`, {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                loadNotifications(); // Reload notifications
+            })
+            .catch(error => {
+                console.log('Demo: Marking as read');
+                // Demo functionality
+                const notificationItem = event.target.closest('.notification-item');
+                if (notificationItem) {
+                    notificationItem.classList.remove('unread');
+                }
+                updateNotificationBadge(2); // Decrease badge count
+            });
+        }
+        
+        function clearAllNotifications() {
+            event.preventDefault();
+            
+            // Clear all notifications
+            fetch('/api/notifications/clear', {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                loadNotifications(); // Reload notifications
+            })
+            .catch(error => {
+                console.log('Demo: Clearing all notifications');
+                // Demo functionality
+                const notificationList = document.getElementById('notificationList');
+                notificationList.innerHTML = `
+                    <div class="notification-item">
+                        <div class="notification-content">
+                            <p>No new notifications</p>
+                        </div>
+                    </div>
+                `;
+                updateNotificationBadge(0);
+            });
+        }
+        
+        // Show loading state on page unload
+        window.addEventListener('beforeunload', function() {
+            document.body.style.opacity = '0.8';
+        });
+        
+        // Auto-refresh notifications every 30 seconds
+        setInterval(loadNotifications, 30000);
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

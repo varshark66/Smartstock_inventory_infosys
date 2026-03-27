@@ -1,0 +1,351 @@
+{% extends "employee/base.html" %}
+
+{% block title %}Employee Profile - Smart Inventory Management System{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="page-header">
+        <h1>Employee Profile</h1>
+        <p>Manage your personal information and account settings</p>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <div class="avatar-container">
+                            <img id="profileImage" src="/static/uploads/default.png" class="profile-img">
+
+                            <!-- Hidden file input -->
+                            <input type="file" id="imageInput" accept="image/*" hidden>
+
+                            <!-- Camera button -->
+                            <button type="button" class="camera-btn" onclick="document.getElementById('imageInput').click()">
+                                <i class="fas fa-camera"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <h4 id="profileName"></h4>
+                    <p class="text-muted" id="profileRole"></p>
+                    <div class="badge bg-success mb-3">Active</div>
+                    
+                    <div class="text-start">
+                        <h6 class="text-muted">Contact Information</h6>
+                        <p class="mb-2"><i class="fas fa-envelope me-2"></i> <span id="profileEmail"></span></p>
+                        <p class="mb-2"><i class="fas fa-phone me-2"></i> <span id="profilePhone"></span></p>
+                        <p class="mb-2"><i class="fas fa-map-marker-alt me-2"></i> <span id="profileAddress"></span></p>
+                    </div>
+                    
+                    <hr>
+                    
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-8">
+            <!-- Personal Information -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="card-title mb-0">Personal Information</h5>
+                </div>
+                <div class="card-body">
+                    <form id="profileForm" onsubmit="updateProfile(event)">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="fullName" class="form-label">Full Name</label>
+                                <input type="text" id="fullName" class="form-control">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="username" class="form-label">Username</label>
+                                <input type="text" id="username" class="form-control" readonly>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="email" class="form-label">Email Address</label>
+                                <input type="email" id="email" class="form-control" readonly>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="phone" class="form-label">Phone Number</label>
+                                <input type="tel" id="phone" class="form-control">
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="address" class="form-label">Address</label>
+                            <textarea id="address" class="form-control"></textarea>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="department" class="form-label">Department</label>
+                                <select class="form-select" id="department">
+                                    <option value="sales">Sales</option>
+                                    <option value="inventory">Inventory</option>
+                                    <option value="management">Management</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="role" class="form-label">Role</label>
+                                <input type="text" id="role" class="form-control" readonly>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Save Changes
+                            </button>
+                            <button type="button" class="btn btn-secondary" onclick="resetProfileForm()">
+                                <i class="fas fa-times"></i> Cancel
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Success/Error Messages -->
+<div class="alert alert-success position-fixed top-0 end-0 m-3" id="successMessage" style="display: none; z-index: 1050;">
+    Profile updated successfully!
+</div>
+
+<div class="alert alert-danger position-fixed top-0 end-0 m-3" id="errorMessage" style="display: none; z-index: 1050;">
+    Error updating profile. Please try again.
+</div>
+
+<style>
+.avatar-container {
+    position: relative;
+    display: inline-block;
+}
+
+.timeline {
+    position: relative;
+    padding-left: 30px;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 15px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #e9ecef;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -23px;
+    top: 5px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 2px solid white;
+}
+
+.timeline-content {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+}
+.profile-img {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;   /* 🔥 circle */
+    object-fit: cover;
+    border: 3px solid #28a745;
+}
+
+.avatar-container {
+    position: relative;
+    display: inline-block;
+}
+
+.camera-btn {
+    position: absolute;
+    bottom: 5px;
+    right: 5px;
+    background: #28a745;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    padding: 6px;
+    cursor: pointer;
+}
+</style>
+
+<script>
+// ✅ ADD HERE
+let selectedImage = null;
+
+document.getElementById("imageInput").addEventListener("change", function (e) {
+    const file = e.target.files[0];
+    if (file) {
+        selectedImage = file;
+        document.getElementById("profileImage").src = URL.createObjectURL(file);
+    }
+});
+
+window.onload = async function () {
+    try {
+
+        // ✅ image upload handler
+        document.getElementById("imageInput").addEventListener("change", function (e) {
+            const file = e.target.files[0];
+            if (file) {
+                selectedImage = file;
+                document.getElementById("profileImage").src = URL.createObjectURL(file);
+            }
+        });
+
+        // ✅ fetch data
+        const res = await fetch("/api/employee/profile");
+        const data = await res.json();
+
+        console.log("PROFILE DATA:", data); // 🔥 DEBUG
+
+        // ✅ SET VALUES
+        document.getElementById("fullName").value = data.full_name || "";
+        document.getElementById("username").value = data.username || "";
+        document.getElementById("email").value = data.email || "";
+        document.getElementById("phone").value = data.phone || "";
+        document.getElementById("address").value = data.address || "";
+        document.getElementById("department").value = data.department || "";
+
+        // 🔥 role (select or input)
+        const roleField = document.getElementById("role");
+        if (roleField) {
+            roleField.value = data.role || "";
+        }
+
+        // ✅ PROFILE IMAGE
+        document.getElementById("profileImage").src =
+            data.profile_image || "/static/uploads/default.png";
+
+        // ✅ LEFT SIDE CARD
+        document.getElementById("profileName").innerText = data.full_name || "";
+        document.getElementById("profileRole").innerText = data.role || "";
+        document.getElementById("profileEmail").innerText = data.email || "";
+        document.getElementById("profilePhone").innerText = data.phone || "";
+        document.getElementById("profileAddress").innerText = data.address || "";
+
+    } catch (err) {
+        console.error("ERROR:", err);
+    }
+};
+
+async function updateProfile(event) {
+    event.preventDefault();
+
+    // 1. Update profile data
+    const data = {
+        full_name: document.getElementById("fullName").value,
+        phone: document.getElementById("phone").value,
+        address: document.getElementById("address").value,
+        department: document.getElementById("department").value
+    };
+
+    await fetch("/api/employee/profile/update", {
+        method: "PUT",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(data)
+    });
+
+    // 2. Upload image if selected
+    if (selectedImage) {
+        const formData = new FormData();
+        formData.append("image", selectedImage);
+
+        await fetch("/api/employee/upload-profile", {
+            method: "POST",
+            body: formData
+        });
+    }
+
+    showSuccess("Profile updated successfully!");
+}
+
+function changePassword(event) {
+    event.preventDefault();
+    
+    const currentPassword = document.getElementById('currentPassword').value;
+    const newPassword = document.getElementById('newPassword').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
+    
+    if (!currentPassword || !newPassword || !confirmPassword) {
+        showError('Please fill in all password fields');
+        return;
+    }
+    
+    if (newPassword !== confirmPassword) {
+        showError('New passwords do not match');
+        return;
+    }
+    
+    if (newPassword.length < 8) {
+        showError('Password must be at least 8 characters long');
+        return;
+    }
+    
+    showSuccess('Password changed successfully!');
+    resetPasswordForm();
+    
+    setTimeout(() => {
+        hideMessages();
+    }, 3000);
+}
+
+function resetProfileForm() {
+    document.getElementById('profileForm').reset();
+    hideMessages();
+}
+
+function resetPasswordForm() {
+    document.getElementById('passwordForm').reset();
+    hideMessages();
+}
+
+function changeAvatar() {
+    alert('Avatar upload functionality would open file picker');
+}
+
+function showSuccess(message) {
+    const successMessage = document.getElementById('successMessage');
+    successMessage.textContent = message;
+    successMessage.style.display = 'block';
+    document.getElementById('errorMessage').style.display = 'none';
+    
+    setTimeout(() => {
+        successMessage.style.display = 'none';
+    }, 3000);
+}
+
+function showError(message) {
+    const errorMessage = document.getElementById('errorMessage');
+    errorMessage.textContent = message;
+    errorMessage.style.display = 'block';
+    document.getElementById('successMessage').style.display = 'none';
+    
+    setTimeout(() => {
+        errorMessage.style.display = 'none';
+    }, 3000);
+}
+
+function hideMessages() {
+    document.getElementById('successMessage').style.display = 'none';
+    document.getElementById('errorMessage').style.display = 'none';
+}
+</script>
+{% endblock %}

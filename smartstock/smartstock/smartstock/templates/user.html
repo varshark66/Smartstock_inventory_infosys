@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Dashboard - SmartStock</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #1a202c;
+        }
+
+        .navbar {
+            background: white;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 20px;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+        }
+
+        .logout-btn {
+            padding: 8px 16px;
+            background: #e53e3e;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .logout-btn:hover {
+            background: #c53030;
+            transform: translateY(-1px);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .welcome-section {
+            background: white;
+            border-radius: 12px;
+            padding: 3rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .welcome-title {
+            font-size: 36px;
+            font-weight: 700;
+            color: #1a202c;
+            margin-bottom: 1rem;
+        }
+
+        .welcome-subtitle {
+            font-size: 18px;
+            color: #718096;
+            margin-bottom: 2rem;
+        }
+
+        .user-details {
+            background: #f7fafc;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            display: inline-block;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+            font-size: 14px;
+        }
+
+        .detail-label {
+            color: #718096;
+            font-weight: 500;
+        }
+
+        .detail-value {
+            color: #1a202c;
+            font-weight: 600;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .feature-card {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+            cursor: pointer;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-4px);
+        }
+
+        .feature-icon {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 28px;
+            margin-bottom: 1.5rem;
+        }
+
+        .feature-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #1a202c;
+            margin-bottom: 0.5rem;
+        }
+
+        .feature-description {
+            color: #718096;
+            line-height: 1.6;
+            margin-bottom: 1rem;
+        }
+
+        .feature-stats {
+            display: flex;
+            gap: 2rem;
+            margin-top: 1rem;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #718096;
+            text-transform: uppercase;
+        }
+
+        .quick-actions {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .actions-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: #1a202c;
+            margin-bottom: 1.5rem;
+        }
+
+        .action-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .action-btn {
+            padding: 1rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .navbar {
+                padding: 1rem;
+            }
+            
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .welcome-section {
+                padding: 2rem 1.5rem;
+            }
+            
+            .welcome-title {
+                font-size: 28px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="logo">
+            <div class="logo-icon">📦</div>
+            <span>SmartStock</span>
+        </div>
+        <div class="user-info">
+            <div class="user-avatar" id="userAvatar">E</div>
+            <span id="username">Employee</span>
+            <button class="logout-btn" onclick="logout()">Logout</button>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container">
+        <!-- Welcome Section -->
+        <div class="welcome-section">
+            <h1 class="welcome-title">Welcome to SmartStock!</h1>
+            <p class="welcome-subtitle">Your personal inventory management workspace</p>
+            
+            <div class="user-details">
+                <div class="detail-row">
+                    <span class="detail-label">Username:</span>
+                    <span class="detail-value" id="displayUsername">-</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Role:</span>
+                    <span class="detail-value">Employee</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Login Time:</span>
+                    <span class="detail-value" id="loginTime">-</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Features Grid -->
+        <div class="features-grid">
+            <div class="feature-card" onclick="openFeature('inventory')">
+                <div class="feature-icon">📋</div>
+                <h3 class="feature-title">Inventory Management</h3>
+                <p class="feature-description">Manage stock levels, track products, and monitor inventory movements in real-time.</p>
+                <div class="feature-stats">
+                    <div class="stat-item">
+                        <div class="stat-value">247</div>
+                        <div class="stat-label">Products</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">12</div>
+                        <div class="stat-label">Low Stock</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="feature-card" onclick="openFeature('sales')">
+                <div class="feature-icon">💰</div>
+                <h3 class="feature-title">Sales Processing</h3>
+                <p class="feature-description">Process sales transactions, manage customer orders, and track revenue.</p>
+                <div class="feature-stats">
+                    <div class="stat-item">
+                        <div class="stat-value">89</div>
+                        <div class="stat-label">Today</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">₹4.2k</div>
+                        <div class="stat-label">Revenue</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="feature-card" onclick="openFeature('reports')">
+                <div class="feature-icon">📊</div>
+                <h3 class="feature-title">Personal Reports</h3>
+                <p class="feature-description">View your performance metrics, sales reports, and activity summaries.</p>
+                <div class="feature-stats">
+                    <div class="stat-item">
+                        <div class="stat-value">98%</div>
+                        <div class="stat-label">Efficiency</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">4.8</div>
+                        <div class="stat-label">Rating</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="quick-actions">
+            <h2 class="actions-title">Quick Actions</h2>
+            <div class="action-buttons">
+                <button class="action-btn" onclick="quickAction('add-product')">+ Add Product</button>
+                <button class="action-btn" onclick="quickAction('new-sale')">🛒 New Sale</button>
+                <button class="action-btn" onclick="quickAction('stock-check')">✓ Stock Check</button>
+                <button class="action-btn" onclick="quickAction('reports')">📈 View Reports</button>
+            </div>
+        </div>
+    </div>
+
+<script>
+    // Check authentication on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        const token = localStorage.getItem('token');
+        const role = localStorage.getItem('role');
+        const username = localStorage.getItem('username');
+
+        if (!token || role !== 'user') {
+            alert('Access denied. Employee privileges required.');
+            window.location.href = '/login';
+            return;
+        }
+
+        // Update user info in navbar and welcome section
+        document.getElementById('username').textContent = username;
+        document.getElementById('displayUsername').textContent = username;
+        document.getElementById('userAvatar').textContent = username.charAt(0).toUpperCase();
+
+        // Set current login time
+        const now = new Date();
+        document.getElementById('loginTime').textContent = now.toLocaleString();
+    });
+
+    // Open feature (placeholder function)
+    function openFeature(feature) {
+        const messages = {
+            'inventory': 'Opening Inventory Management System...\n\nThis would show detailed inventory management interface with product listings, stock levels, and management tools.',
+            'sales': 'Opening Sales Processing System...\n\nThis would show the sales interface with transaction processing, customer management, and payment options.',
+            'reports': 'Opening Personal Reports Dashboard...\n\nThis would show detailed analytics, performance metrics, and customizable reports.'
+        };
+        
+        alert(messages[feature] || 'Feature coming soon!');
+    }
+
+    // Quick action (placeholder function)
+    function quickAction(action) {
+        const messages = {
+            'add-product': 'Opening Add Product Form...\n\nThis would open a form to add new products to the inventory system.',
+            'new-sale': 'Opening New Sale Interface...\n\nThis would open the sales transaction interface.',
+            'stock-check': 'Opening Stock Check Tool...\n\nThis would show current stock levels and allow inventory verification.',
+            'reports': 'Opening Reports Generator...\n\nThis would open the report generation interface.'
+        };
+        
+        alert(messages[action] || 'Action coming soon!');
+    }
+
+    // Logout function
+    function logout() {
+        localStorage.removeItem('token');
+        localStorage.removeItem('role');
+        localStorage.removeItem('username');
+        window.location.href = '/login';
+    }
+</script>
+
+</body>
+</html>

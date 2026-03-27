@@ -1,0 +1,402 @@
+{% extends "employee/base.html" %}
+
+{% block title %}Sales Entry - Smart Inventory Management System{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="page-header">
+        <h1>Sales Entry</h1>
+        <p>Record a new sale</p>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <form id="salesEntryForm" onsubmit="handleSalesEntry(event)">
+                        <div class="mb-3">
+                            <label for="productSelect" class="form-label">Select Product</label>
+                            <select class="form-select" id="productSelect" name="product" required onchange="updateProductInfo()">
+                                <option value="">Choose a product...</option>
+                                <!-- Products will be loaded from database -->
+                            </select>
+                        </div>
+                        
+                        <div class="alert alert-info" id="productInfo" style="display: none;">
+                            <h6>Product Information</h6>
+                            <p class="mb-1"><strong>Product:</strong> <span id="selectedProduct">-</span></p>
+                            <p class="mb-1"><strong>Unit Price:</strong> <span id="unitPrice">-</span></p>
+                            <p class="mb-0"><strong>Available Stock:</strong> <span id="availableStock">-</span></p>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="quantity" class="form-label">Quantity</label>
+                            <input type="number" class="form-control" id="quantity" name="quantity" min="1" required placeholder="Enter quantity" oninput="calculateTotal()">
+                        </div>
+                        
+                        <div class="card bg-light mb-3">
+                            <div class="card-body">
+                                <h6 class="card-title">Order Summary</h6>
+                                <div class="row">
+                                    <div class="col-6">
+                                        <small class="text-muted">Unit Price:</small>
+                                        <p class="mb-1 fw-bold" id="displayUnitPrice">₹0.00</p>
+                                    </div>
+                                    <div class="col-6">
+                                        <small class="text-muted">Quantity:</small>
+                                        <p class="mb-1 fw-bold" id="displayQuantity">0</p>
+                                    </div>
+                                    <div class="col-6">
+                                        <small class="text-muted">Subtotal:</small>
+                                        <p class="mb-1 fw-bold" id="subtotal">₹0.00</p>
+                                    </div>
+                                    <div class="col-12">
+                                        <hr>
+                                        <div class="d-flex justify-content-between">
+                                            <span class="fw-bold">Total Amount:</span>
+                                            <span class="fw-bold text-success" id="totalAmount">₹0.00</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Payment Method</label>
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="paymentMethod" id="cash" value="cash" checked>
+                                        <label class="form-check-label" for="cash">
+                                            <i class="fas fa-money-bill-wave"></i> Cash
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="paymentMethod" id="card" value="card">
+                                        <label class="form-check-label" for="card">
+                                            <i class="fas fa-credit-card"></i> Card
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="paymentMethod" id="upi" value="upi">
+                                        <label class="form-check-label" for="upi">
+                                            <i class="fas fa-qrcode"></i> UPI
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="paymentMethod" id="netbanking" value="netbanking">
+                                        <label class="form-check-label" for="netbanking">
+                                            <i class="fas fa-university"></i> Net Banking
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="customerName" class="form-label">Customer Name (Optional)</label>
+                            <input type="text" class="form-control" id="customerName" name="customerName" placeholder="Enter customer name">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="notes" class="form-label">Notes (Optional)</label>
+                            <textarea class="form-control" id="notes" name="notes" rows="3" placeholder="Enter any additional notes"></textarea>
+                        </div>
+                        
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Record Sale
+                            </button>
+                            <button type="button" class="btn btn-secondary" onclick="resetForm()">
+                                <i class="fas fa-times"></i> Cancel
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">Today's Sales</h5>
+                        <div class="list-group list-group-flush" id="todaySalesList">
+                            <!-- Real sales will come here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="alert alert-success position-fixed top-0 end-0 m-3" id="successMessage" style="display: none; z-index: 1050;">
+    Sale recorded successfully!
+</div>
+
+<div class="alert alert-danger position-fixed top-0 end-0 m-3" id="errorMessage" style="display: none; z-index: 1050;">
+    Error recording sale. Please try again.
+</div>
+
+<script>
+// Load real products from database
+async function loadProducts() {
+    try {
+        const response = await fetch('/api/products');
+        const data = await response.json();
+        
+        // Handle both response formats: direct array or wrapped in "products" key
+        const products = data.products || data;
+        
+        const productSelect = document.getElementById('productSelect');
+        productSelect.innerHTML = '<option value="">Choose a product...</option>';
+        
+        products.forEach(product => {
+            const option = document.createElement('option');
+            option.value = product._id || product.id;
+            // Use price and stock from database, fallback to defaults
+            const price = product.price || product.selling_price || 0;
+            const stock = product.stock_quantity || product.stock || 0;
+            
+            option.textContent = `${product.name} - ₹${price} (${stock} in stock)`;
+            option.dataset.price = price;
+            option.dataset.stock = stock;
+            option.dataset.name = product.name;
+            
+            productSelect.appendChild(option);
+        });
+        
+        console.log('Products loaded successfully:', products.length, 'products');
+    } catch (error) {
+        console.error('Error loading products:', error);
+        // Fallback to sample data if API fails
+        loadSampleProducts();
+    }
+}
+
+async function loadTodaySales() {
+    try {
+        const response = await fetch('/api/employee/sales');
+        const data = await response.json();
+
+        const sales = data.sales || [];
+        const list = document.getElementById('todaySalesList');
+
+        list.innerHTML = '';
+
+        sales.forEach(sale => {
+            const item = document.createElement('div');
+            item.className = 'list-group-item px-0';
+
+            item.innerHTML = `
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-1">${sale.product_name}</h6>
+                        <small class="text-muted">${sale.quantity} unit - ${sale.customer_name || 'Customer'}</small>
+                    </div>
+                    <div class="text-end">
+                        <strong>₹${sale.total_amount}</strong>
+                        <br><small class="text-muted">${sale.time}</small>
+                    </div>
+                </div>
+            `;
+
+            list.appendChild(item);
+        });
+
+    } catch (error) {
+        console.error('Error loading sales:', error);
+    }
+}
+// Fallback sample products
+function loadSampleProducts() {
+    const productSelect = document.getElementById('productSelect');
+    productSelect.innerHTML = '<option value="">Choose a product...</option>';
+    
+    const sampleProducts = [
+        { name: 'Laptop Dell XPS 13', price: 999.99, stock: 5, id: 'laptop' },
+        { name: 'Wireless Mouse Logitech', price: 29.99, stock: 50, id: 'mouse' },
+        { name: 'Mechanical Keyboard', price: 79.99, stock: 25, id: 'keyboard' },
+        { name: '24" Monitor', price: 299.99, stock: 0, id: 'monitor' },
+        { name: 'Office Chair Ergonomic', price: 199.99, stock: 15, id: 'desk-chair' }
+    ];
+    
+    sampleProducts.forEach(product => {
+        const option = document.createElement('option');
+        option.value = product.id;
+        option.textContent = `${product.name} - ₹${product.price} (${product.stock} in stock)`;
+        option.dataset.price = product.price;
+        option.dataset.stock = product.stock;
+        option.dataset.name = product.name;
+        
+        productSelect.appendChild(option);
+    });
+}
+
+// Initialize the page
+document.addEventListener('DOMContentLoaded', function() {
+    loadProducts();
+    loadTodaySales();
+});
+
+let selectedPaymentMethod = 'cash';
+
+function updateProductInfo() {
+    const productSelect = document.getElementById('productSelect');
+    const productInfo = document.getElementById('productInfo');
+    const selectedProduct = document.getElementById('selectedProduct');
+    const unitPrice = document.getElementById('unitPrice');
+    const availableStock = document.getElementById('availableStock');
+    
+    if (productSelect.value) {
+        const option = productSelect.options[productSelect.selectedIndex];
+        selectedProduct.textContent = option.text.split(' - ')[0];
+        unitPrice.textContent = '₹' + option.dataset.price;
+        availableStock.textContent = option.dataset.stock;
+        productInfo.style.display = 'block';
+        
+        calculateTotal();
+    } else {
+        productInfo.style.display = 'none';
+        resetTotals();
+    }
+}
+
+function calculateTotal() {
+    const productSelect = document.getElementById('productSelect');
+    const quantity = document.getElementById('quantity').value;
+    
+    if (productSelect.value && quantity) {
+        const option = productSelect.options[productSelect.selectedIndex];
+        const price = parseFloat(option.dataset.price);
+        const qty = parseInt(quantity);
+        
+        const subtotal = price * qty;
+        const total = subtotal ;
+        
+        document.getElementById('displayUnitPrice').textContent = '₹' + price.toFixed(2);
+        document.getElementById('displayQuantity').textContent = qty;
+        document.getElementById('subtotal').textContent = '₹' + subtotal.toFixed(2);
+        document.getElementById('totalAmount').textContent = '₹' + total.toFixed(2);
+    } else {
+        resetTotals();
+    }
+}
+
+function resetTotals() {
+    document.getElementById('displayUnitPrice').textContent = '₹0.00';
+    document.getElementById('displayQuantity').textContent = '0';
+    document.getElementById('subtotal').textContent = '₹0.00';
+    document.getElementById('totalAmount').textContent = '₹0.00';
+}
+
+async function handleSalesEntry(event) {
+    event.preventDefault();
+    
+    const productSelect = document.getElementById('productSelect');
+    const quantity = document.getElementById('quantity').value;
+    const customerName = document.getElementById('customerName').value;
+    const notes = document.getElementById('notes').value;
+    const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked').value;
+    
+    if (!productSelect.value || !quantity) {
+        showError('Please fill in all required fields');
+        return;
+    }
+    
+    // Get product details
+    const selectedOption = productSelect.options[productSelect.selectedIndex];
+    const productId = productSelect.value;
+    const productName = selectedOption.dataset.name;
+    const unitPrice = parseFloat(selectedOption.dataset.price);
+    const availableStock = parseInt(selectedOption.dataset.stock);
+    
+    // Validate stock availability
+    if (parseInt(quantity) > availableStock) {
+        showError(`Only ${availableStock} units available in stock`);
+        return;
+    }
+    
+    try {
+        // Send sale data to backend
+        const response = await fetch('/api/employee/sales', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                product_id: productId,
+                product_name: productName,
+                quantity: parseInt(quantity),
+                unit_price: unitPrice,
+                total_amount: unitPrice * parseInt(quantity),
+                customer_name: customerName || 'Walk-in Customer',
+                payment_method: paymentMethod
+            }),
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            showSuccess('Sale recorded successfully!');
+            
+            // Update product stock locally
+            const newStock = availableStock - parseInt(quantity);
+            selectedOption.dataset.stock = newStock;
+            selectedOption.textContent = `${productName} - ₹${unitPrice} (${newStock} in stock)`;
+            
+            setTimeout(() => {
+                resetForm();
+                // Reload products to get updated stock
+                loadProducts();
+                loadTodaySales();
+            }, 2000);
+        } else {
+            throw new Error('Failed to record sale');
+        }
+    } catch (error) {
+        console.error('Error recording sale:', error);
+        showError('Error recording sale. Please try again.');
+    }
+}
+
+function resetForm() {
+    document.getElementById('salesEntryForm').reset();
+    document.getElementById('productInfo').style.display = 'none';
+    resetTotals();
+    hideMessages();
+}
+
+function showSuccess(message) {
+    const successMessage = document.getElementById('successMessage');
+    successMessage.textContent = message;
+    successMessage.style.display = 'block';
+    document.getElementById('errorMessage').style.display = 'none';
+    
+    setTimeout(() => {
+        successMessage.style.display = 'none';
+    }, 3000);
+}
+
+function showError(message) {
+    const errorMessage = document.getElementById('errorMessage');
+    errorMessage.textContent = message;
+    errorMessage.style.display = 'block';
+    document.getElementById('successMessage').style.display = 'none';
+    
+    setTimeout(() => {
+        errorMessage.style.display = 'none';
+    }, 3000);
+}
+
+function hideMessages() {
+    document.getElementById('successMessage').style.display = 'none';
+    document.getElementById('errorMessage').style.display = 'none';
+}
+</script>
+{% endblock %}

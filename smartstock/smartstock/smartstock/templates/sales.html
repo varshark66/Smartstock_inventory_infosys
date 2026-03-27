@@ -1,0 +1,1417 @@
+{% extends "base.html" %}
+
+{% block title %}Sales & Transactions - Smart Inventory Management System{% endblock %}
+
+{% block content %}
+<div class="sales-container">
+    <div class="page-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1>Sales & Transactions</h1>
+                <p>Record and manage sales transactions</p>
+            </div>
+            <div>
+                <button class="btn btn-success" onclick="showDateRangeModal()">
+                    <i class="fas fa-download me-1"></i> Download Report
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab Navigation -->
+    <div class="tab-navigation">
+        <ul class="nav nav-tabs" id="salesTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="record-sale-tab" data-bs-toggle="tab" data-bs-target="#record-sale-pane" type="button" role="tab" aria-controls="record-sale-pane" aria-selected="true">
+                    <i class="fas fa-plus-circle"></i> Record Sale
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="transaction-history-tab" data-bs-toggle="tab" data-bs-target="#transaction-history-pane" type="button" role="tab" aria-controls="transaction-history-pane" aria-selected="false">
+                    <i class="fas fa-history"></i> Transaction History
+                </button>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Tab Content -->
+    <div class="tab-content" id="salesTabsContent">
+        <!-- Record Sale Tab -->
+        <div class="tab-pane fade show active" id="record-sale-pane" role="tabpanel" aria-labelledby="record-sale-tab">
+            <!-- Record Sale Section -->
+            <div class="content-section">
+                <div class="section-header">
+                    <h3><i class="fas fa-plus-circle me-2"></i>Record Sale</h3>
+                </div>
+                
+                <form id="saleForm" class="form-layout">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="skuSearch">Search by SKU or Name</label>
+                    <div class="search-wrapper">
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="skuSearch" placeholder="Enter SKU or product name..." autocomplete="off">
+                            <button type="button" class="btn btn-outline-secondary" onclick="searchProductBySku()">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                        <div class="search-suggestions" id="searchSuggestions">
+                            <!-- Suggestions will appear here -->
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="productSelect">Product</label>
+                    <select class="form-select" id="productSelect" required>
+                        <option value="">Select Product</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="saleQuantity">Quantity</label>
+                    <input type="number" class="form-control" id="saleQuantity" min="1" value="1" required>
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="customerName">Customer</label>
+                    <input type="text" class="form-control" id="customerName" placeholder="Optional">
+                </div>
+                <div class="form-group">
+                    <label for="paymentMethod">Payment Method</label>
+                    <div class="custom-select-wrapper">
+                        <select class="form-select d-none" id="paymentMethod" required>
+                            <option value="cash">Cash</option>
+                            <option value="card">Card</option>
+                            <option value="upi">UPI</option>
+                            <option value="other">Other</option>
+                        </select>
+                        <div class="custom-select-display form-control" id="customPaymentMethodDisplay">
+                            <i class="fas fa-money-bill-wave me-2"></i>Cash
+                        </div>
+                        <div class="custom-select-options" id="customPaymentMethodOptions">
+                            <div class="custom-option" data-value="cash">
+                                <i class="fas fa-money-bill-wave me-2"></i>Cash
+                            </div>
+                            <div class="custom-option" data-value="card">
+                                <i class="fas fa-credit-card me-2"></i>Card
+                            </div>
+                            <div class="custom-option" data-value="upi">
+                                <i class="fas fa-mobile-alt me-2"></i>UPI
+                            </div>
+                            <div class="custom-option" data-value="other">
+                                <i class="fas fa-receipt me-2"></i>Other
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="unitPrice">Unit Price</label>
+                    <input type="text" class="form-control" id="unitPrice" step="0.01" placeholder="0.00">
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="totalAmount">Total Amount</label>
+                    <input type="text" class="form-control" id="totalAmount" readonly placeholder="0.00">
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" onclick="resetSaleForm()">Clear</button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-check me-1"></i>Record Sale
+                </button>
+            </div>
+        </form>
+            </div>
+        </div>
+
+        <!-- Transaction History Tab -->
+        <div class="tab-pane fade" id="transaction-history-pane" role="tabpanel" aria-labelledby="transaction-history-tab">
+            <!-- Transaction History Section -->
+            <div class="content-section">
+                <div class="section-header">
+                    <h3><i class="fas fa-history me-2"></i>Transaction History</h3>
+                    <div class="header-actions">
+                        <input type="date" class="form-control form-control-sm" id="dateFilter" onchange="filterTransactions()">
+                        <div class="custom-select-wrapper">
+                        <select class="form-select form-select-sm d-none" id="paymentFilter" onchange="filterTransactions()">
+                            <option value="">All Payments</option>
+                            <option value="cash">Cash</option>
+                            <option value="card">Card</option>
+                            <option value="upi">UPI</option>
+                            <option value="other">Other</option>
+                        </select>
+                        <div class="custom-select-display form-control form-control-sm" id="customPaymentFilterDisplay">
+                            <i class="fas fa-filter me-2"></i>All Payments
+                        </div>
+                        <div class="custom-select-options" id="customPaymentFilterOptions">
+                            <div class="custom-option" data-value="">
+                                <i class="fas fa-filter me-2"></i>All Payments
+                            </div>
+                            <div class="custom-option" data-value="cash">
+                                <i class="fas fa-money-bill-wave me-2"></i>Cash
+                            </div>
+                            <div class="custom-option" data-value="card">
+                                <i class="fas fa-credit-card me-2"></i>Card
+                            </div>
+                            <div class="custom-option" data-value="upi">
+                                <i class="fas fa-mobile-alt me-2"></i>UPI
+                            </div>
+                            <div class="custom-option" data-value="other">
+                                <i class="fas fa-receipt me-2"></i>Other
+                            </div>
+                        </div>
+                    </div>
+                    </div>
+                </div>
+
+                <div class="table-container">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Sr. No.</th>
+                                <th>SKU</th>
+                                <th>Product</th>
+                                <th>Date</th>
+                                <th>Time</th>
+                                <th>Qty</th>
+                                <th>Total</th>
+                                <th>Payment</th>
+                                <th>Status</th>
+                                <th>User Name</th>
+                            </tr>
+                        </thead>
+                        <tbody id="transactionsTableBody">
+                            <!-- Transactions will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Date Range Modal -->
+<div class="modal fade" id="dateRangeModal" tabindex="-1" aria-labelledby="dateRangeModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="dateRangeModalLabel">
+                    <i class="fas fa-calendar-alt me-2"></i>Select Date Range
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="dateRangeForm">
+                    <div class="mb-3">
+                        <label for="fromDate" class="form-label">From Date</label>
+                        <input type="date" class="form-control" id="fromDate" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="toDate" class="form-label">To Date</label>
+                        <input type="date" class="form-control" id="toDate" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="downloadPaymentFilter" class="form-label">Payment Method (Optional)</label>
+                        <div class="custom-select-wrapper">
+                            <select class="form-select d-none" id="downloadPaymentFilter">
+                                <option value="">All Payment Methods</option>
+                                <option value="cash">Cash</option>
+                                <option value="card">Card</option>
+                                <option value="upi">UPI</option>
+                                <option value="other">Other</option>
+                            </select>
+                            <div class="custom-select-display form-control" id="customDownloadPaymentFilterDisplay">
+                                <i class="fas fa-filter me-2"></i>All Payment Methods
+                            </div>
+                            <div class="custom-select-options" id="customDownloadPaymentFilterOptions">
+                                <div class="custom-option" data-value="">
+                                    <i class="fas fa-filter me-2"></i>All Payment Methods
+                                </div>
+                                <div class="custom-option" data-value="cash">
+                                    <i class="fas fa-money-bill-wave me-2"></i>Cash
+                                </div>
+                                <div class="custom-option" data-value="card">
+                                    <i class="fas fa-credit-card me-2"></i>Card
+                                </div>
+                                <div class="custom-option" data-value="upi">
+                                    <i class="fas fa-mobile-alt me-2"></i>UPI
+                                </div>
+                                <div class="custom-option" data-value="other">
+                                    <i class="fas fa-receipt me-2"></i>Other
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success" onclick="downloadTransactionHistory()">
+                    <i class="fas fa-download me-1"></i>Download
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let products = [];
+let sales = [];
+
+// Search product by SKU or name
+function searchProductBySku() {
+    const searchTerm = document.getElementById('skuSearch').value.toLowerCase().trim();
+    
+    if (!searchTerm) {
+        showAlert('Please enter SKU or product name to search', 'warning');
+        return;
+    }
+    
+    const foundProduct = products.find(product => {
+        const productName = product.name.toLowerCase();
+        const productSku = (product.sku || '').toLowerCase();
+        return productName.includes(searchTerm) || productSku.includes(searchTerm);
+    });
+    
+    if (foundProduct) {
+        // Select the found product
+        document.getElementById('productSelect').value = foundProduct._id;
+        
+        // Trigger the change event to populate price and stock
+        const event = new Event('change', { bubbles: true });
+        document.getElementById('productSelect').dispatchEvent(event);
+        
+        // Highlight the search field
+        const searchInput = document.getElementById('skuSearch');
+        searchInput.classList.add('is-valid');
+        setTimeout(() => searchInput.classList.remove('is-valid'), 2000);
+        
+        // Hide suggestions
+        hideSuggestions();
+        
+        showAlert(`Found: ${foundProduct.name}`, 'success');
+    } else {
+        // Highlight search field as invalid
+        const searchInput = document.getElementById('skuSearch');
+        searchInput.classList.add('is-invalid');
+        setTimeout(() => searchInput.classList.remove('is-invalid'), 2000);
+        
+        showAlert('Product not found. Try a different SKU or name.', 'danger');
+    }
+}
+
+// Autocomplete functionality
+let selectedSuggestionIndex = -1;
+
+function showSuggestions(searchTerm) {
+    const suggestionsContainer = document.getElementById('searchSuggestions');
+    
+    if (!searchTerm || searchTerm.length < 2) {
+        hideSuggestions();
+        return;
+    }
+    
+    const matchedProducts = products.filter(product => {
+        const productName = product.name.toLowerCase();
+        const productSku = (product.sku || '').toLowerCase();
+        return productName.includes(searchTerm) || productSku.includes(searchTerm);
+    }).slice(0, 8); // Limit to 8 suggestions
+    
+    if (matchedProducts.length === 0) {
+        hideSuggestions();
+        return;
+    }
+    
+    suggestionsContainer.innerHTML = matchedProducts.map((product, index) => {
+        const stockLevel = getStockLevel(product.stock_quantity);
+        const stockClass = stockLevel.class;
+        const stockText = stockLevel.text;
+        
+        return `
+            <div class="suggestion-item" data-index="${index}" data-product-id="${product._id}">
+                <div>
+                    <div>${highlightMatch(product.name, searchTerm)}</div>
+                    <small class="sku">SKU: ${product.sku || generateSKU(product.name)}</small>
+                </div>
+                <div>
+                    <span class="stock ${stockClass}">Stock: ${product.stock_quantity} ${stockText}</span>
+                </div>
+            </div>
+        `;
+    }).join('');
+    
+    suggestionsContainer.classList.add('show');
+    selectedSuggestionIndex = -1;
+}
+
+function hideSuggestions() {
+    const suggestionsContainer = document.getElementById('searchSuggestions');
+    suggestionsContainer.classList.remove('show');
+    suggestionsContainer.innerHTML = '';
+    selectedSuggestionIndex = -1;
+}
+
+function highlightMatch(text, searchTerm) {
+    const regex = new RegExp(`(${searchTerm})`, 'gi');
+    return text.replace(regex, '<strong>$1</strong>');
+}
+
+function getStockLevel(quantity) {
+    if (quantity <= 5) {
+        return { class: 'low', text: '(Low)' };
+    } else if (quantity <= 20) {
+        return { class: 'medium', text: '(Medium)' };
+    } else {
+        return { class: 'high', text: '(Good)' };
+    }
+}
+
+function selectSuggestion(productId) {
+    const product = products.find(p => p._id === productId);
+    if (product) {
+        document.getElementById('productSelect').value = productId;
+        document.getElementById('skuSearch').value = product.name;
+        
+        // Trigger the change event to populate price and stock
+        const event = new Event('change', { bubbles: true });
+        document.getElementById('productSelect').dispatchEvent(event);
+        
+        hideSuggestions();
+        
+        // Highlight the search field
+        const searchInput = document.getElementById('skuSearch');
+        searchInput.classList.add('is-valid');
+        setTimeout(() => searchInput.classList.remove('is-valid'), 2000);
+    }
+}
+
+function navigateSuggestions(direction) {
+    const suggestions = document.querySelectorAll('.suggestion-item');
+    
+    if (suggestions.length === 0) return;
+    
+    // Remove previous selection
+    if (selectedSuggestionIndex >= 0) {
+        suggestions[selectedSuggestionIndex].classList.remove('selected');
+    }
+    
+    // Navigate
+    if (direction === 'down') {
+        selectedSuggestionIndex = (selectedSuggestionIndex + 1) % suggestions.length;
+    } else if (direction === 'up') {
+        selectedSuggestionIndex = selectedSuggestionIndex <= 0 ? suggestions.length - 1 : selectedSuggestionIndex - 1;
+    }
+    
+    // Add selection to new item
+    suggestions[selectedSuggestionIndex].classList.add('selected');
+    suggestions[selectedSuggestionIndex].scrollIntoView({ block: 'nearest' });
+}
+
+// Handle Enter key in SKU search
+document.addEventListener('DOMContentLoaded', function() {
+    const skuSearchInput = document.getElementById('skuSearch');
+    const suggestionsContainer = document.getElementById('searchSuggestions');
+    
+    if (skuSearchInput) {
+        // Input event for autocomplete
+        skuSearchInput.addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase().trim();
+            showSuggestions(searchTerm);
+        });
+        
+        // Keyboard navigation
+        skuSearchInput.addEventListener('keydown', function(e) {
+            const suggestions = document.querySelectorAll('.suggestion-item');
+            
+            switch(e.key) {
+                case 'Enter':
+                    e.preventDefault();
+                    if (selectedSuggestionIndex >= 0 && suggestions[selectedSuggestionIndex]) {
+                        const productId = suggestions[selectedSuggestionIndex].dataset.productId;
+                        selectSuggestion(productId);
+                    } else {
+                        searchProductBySku();
+                    }
+                    break;
+                    
+                case 'ArrowDown':
+                    e.preventDefault();
+                    navigateSuggestions('down');
+                    break;
+                    
+                case 'ArrowUp':
+                    e.preventDefault();
+                    navigateSuggestions('up');
+                    break;
+                    
+                case 'Escape':
+                    hideSuggestions();
+                    break;
+            }
+        });
+        
+        // Click on suggestions
+        suggestionsContainer.addEventListener('click', function(e) {
+            const suggestionItem = e.target.closest('.suggestion-item');
+            if (suggestionItem) {
+                const productId = suggestionItem.dataset.productId;
+                selectSuggestion(productId);
+            }
+        });
+        
+        // Hide suggestions when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.search-wrapper')) {
+                hideSuggestions();
+            }
+        });
+    }
+});
+
+// Load data
+async function loadSalesData() {
+    await Promise.all([
+        loadProducts(),
+        loadSales()
+    ]);
+}
+
+// Load products for dropdown
+async function loadProducts() {
+    try {
+        const response = await fetch('/api/products');
+        const data = await response.json();
+        products = data.products;
+        
+        const productSelect = document.getElementById('productSelect');
+        productSelect.innerHTML = '<option value="">Select Product</option>';
+        
+        products.forEach(product => {
+            const option = document.createElement('option');
+            option.value = product._id;
+            option.textContent = `${product.name} (Stock: ${product.stock_quantity})`;
+            option.dataset.price = product.price;
+            option.dataset.name = product.name;
+            option.dataset.stock = product.stock_quantity;
+            productSelect.appendChild(option);
+        });
+    } catch (error) {
+        console.error('Error loading products:', error);
+    }
+}
+
+// Load sales transactions
+async function loadSales() {
+    try {
+        const response = await fetch('/api/sales');
+        const data = await response.json();
+        sales = data.sales;
+        displayTransactions(sales);
+    } catch (error) {
+        console.error('Error loading sales:', error);
+    }
+}
+
+// Display transactions
+function displayTransactions(transactionsToDisplay) {
+    const tbody = document.getElementById('transactionsTableBody');
+    tbody.innerHTML = '';
+    
+    if (transactionsToDisplay.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="10" class="text-center text-muted py-3">
+                    <small>No transactions found</small>
+                </td>
+            </tr>
+        `;
+        return;
+    }
+    
+    transactionsToDisplay.forEach((sale, index) => {
+        const row = document.createElement('tr');
+        const serialNumber = (index + 1).toString().padStart(2, '0');
+        
+        // Try to get SKU from sale data or generate from product name
+        let sku = sale.sku || sale.product_sku || generateSKU(sale.product_name);
+        
+        row.innerHTML = `
+            <td><strong>${serialNumber}</strong></td>
+            <td><small class="text-muted">${sku}</small></td>
+            <td><small>${sale.product_name}</small></td>
+            <td><small>${formatDate(sale.date)}</small></td>
+            <td><small>${sale.time || '-'}</small></td>
+            <td><span class="badge bg-secondary">${sale.quantity}</span></td>
+            <td><strong class="text-success">₹${sale.total_amount.toFixed(2)}</strong></td>
+            <td>
+                <span class="payment-badge ${sale.payment_method}">
+                    ${getPaymentIcon(sale.payment_method)}
+                    ${sale.payment_method.toUpperCase()}
+                </span>
+            </td>
+            <td><span class="badge bg-success">Paid</span></td>
+            <td><small>${getActiveUserName()}</small></td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+// Get active user name
+function getActiveUserName() {
+    // Try multiple sources for user name
+    const userName = sessionStorage.getItem('user_name') || 
+                     localStorage.getItem('username') || 
+                     localStorage.getItem('user_name') || 
+                     document.querySelector('.user-info .user-name')?.textContent ||
+                     document.querySelector('.user-info')?.textContent ||
+                     'Current User';
+    return userName;
+}
+
+// Get payment method icon
+function getPaymentIcon(paymentMethod) {
+    switch(paymentMethod) {
+        case 'cash':
+            return '<i class="fas fa-money-bill-wave me-1"></i>';
+        case 'card':
+            return '<i class="fas fa-credit-card me-1"></i>';
+        case 'upi':
+            return '<i class="fas fa-mobile-alt me-1"></i>';
+        case 'other':
+            return '<i class="fas fa-receipt me-1"></i>';
+        default:
+            return '<i class="fas fa-question-circle me-1"></i>';
+    }
+}
+
+// Generate SKU from product name
+function generateSKU(productName) {
+    // Create SKU by taking first 3 letters of product name and adding random number
+    const prefix = productName.replace(/[^a-zA-Z0-9]/g, '').substring(0, 3).toUpperCase();
+    const randomNum = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+    return `${prefix}${randomNum}`;
+}
+
+// Product selection change
+document.getElementById('productSelect').addEventListener('change', function() {
+    const selectedOption = this.options[this.selectedIndex];
+    const price = parseFloat(selectedOption.dataset.price) || 0;
+    const stock = parseInt(selectedOption.dataset.stock) || 0;
+    
+    document.getElementById('unitPrice').value = price.toFixed(2);
+    document.getElementById('saleQuantity').max = stock;
+    calculateTotal();
+});
+
+// Quantity change
+document.getElementById('saleQuantity').addEventListener('input', calculateTotal);
+
+// Unit price change
+document.getElementById('unitPrice').addEventListener('input', calculateTotal);
+
+function calculateTotal() {
+    const quantity = parseInt(document.getElementById('saleQuantity').value) || 0;
+    const unitPrice = parseFloat(document.getElementById('unitPrice').value) || 0;
+    const total = quantity * unitPrice;
+    
+    document.getElementById('totalAmount').value = total.toFixed(2);
+}
+
+// Submit sale form
+document.getElementById('saleForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const productId = document.getElementById('productSelect').value;
+    const productOption = document.getElementById('productSelect').options[document.getElementById('productSelect').selectedIndex];
+    const quantity = parseInt(document.getElementById('saleQuantity').value);
+    const unitPrice = parseFloat(document.getElementById('unitPrice').value);
+    const totalAmount = parseFloat(document.getElementById('totalAmount').value);
+    const customerName = document.getElementById('customerName').value;
+    const paymentMethod = document.getElementById('paymentMethod').value;
+    
+    // Check stock availability
+    const availableStock = parseInt(productOption.dataset.stock);
+    if (quantity > availableStock) {
+        showAlert('Insufficient stock available', 'danger');
+        return;
+    }
+    
+    const saleData = {
+        product_id: productId,
+        product_name: productOption.dataset.name,
+        quantity: quantity,
+        unit_price: unitPrice,
+        total_amount: totalAmount,
+        customer_name: customerName,
+        payment_method: paymentMethod
+    };
+    
+    try {
+        const response = await fetch('/api/sales', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(saleData)
+        });
+        
+        if (response.ok) {
+            showAlert('Sale recorded successfully', 'success');
+            resetSaleForm();
+            await loadSalesData();
+        } else {
+            showAlert('Error recording sale', 'danger');
+        }
+    } catch (error) {
+        console.error('Error recording sale:', error);
+        showAlert('Error recording sale', 'danger');
+    }
+});
+
+// Reset form
+function resetSaleForm() {
+    document.getElementById('saleForm').reset();
+    document.getElementById('skuSearch').value = '';
+    document.getElementById('unitPrice').value = '';
+    document.getElementById('totalAmount').value = '';
+    
+    // Reset payment method display
+    const paymentDisplay = document.getElementById('customPaymentMethodDisplay');
+    if (paymentDisplay) {
+        paymentDisplay.innerHTML = '<i class="fas fa-money-bill-wave me-2"></i>Cash';
+    }
+    
+    // Clear validation states
+    document.getElementById('skuSearch').classList.remove('is-valid', 'is-invalid');
+}
+
+// Filter transactions
+document.getElementById('dateFilter').addEventListener('change', filterTransactions);
+document.getElementById('paymentFilter').addEventListener('change', filterTransactions);
+
+function filterTransactions() {
+    const dateFilter = document.getElementById('dateFilter').value;
+    const paymentFilter = document.getElementById('paymentFilter').value;
+    
+    let filteredSales = sales;
+    
+    if (dateFilter) {
+        filteredSales = filteredSales.filter(sale => sale.date === dateFilter);
+    }
+    
+    if (paymentFilter) {
+        filteredSales = filteredSales.filter(sale => sale.payment_method === paymentFilter);
+    }
+    
+    displayTransactions(filteredSales);
+}
+
+// Show date range modal
+function showDateRangeModal() {
+    const modal = new bootstrap.Modal(document.getElementById('dateRangeModal'));
+    
+    // Set default dates (last 30 days to today)
+    const today = new Date();
+    const thirtyDaysAgo = new Date(today);
+    thirtyDaysAgo.setDate(today.getDate() - 30);
+    
+    document.getElementById('fromDate').value = thirtyDaysAgo.toISOString().split('T')[0];
+    document.getElementById('toDate').value = today.toISOString().split('T')[0];
+    document.getElementById('downloadPaymentFilter').value = '';
+    
+    modal.show();
+}
+
+// Download transaction history as CSV
+function downloadTransactionHistory() {
+    const fromDate = document.getElementById('fromDate').value;
+    const toDate = document.getElementById('toDate').value;
+    const paymentFilter = document.getElementById('downloadPaymentFilter').value;
+    
+    // Validate dates
+    if (!fromDate || !toDate) {
+        showAlert('Please select both from and to dates', 'warning');
+        return;
+    }
+    
+    if (fromDate > toDate) {
+        showAlert('From date cannot be after to date', 'warning');
+        return;
+    }
+    
+    // Filter sales by date range and payment method
+    let filteredSales = sales.filter(sale => {
+        const saleDate = sale.date;
+        return saleDate >= fromDate && saleDate <= toDate;
+    });
+    
+    if (paymentFilter) {
+        filteredSales = filteredSales.filter(sale => sale.payment_method === paymentFilter);
+    }
+    
+    if (filteredSales.length === 0) {
+        showAlert('No transactions found in selected date range', 'warning');
+        return;
+    }
+    
+    // Create CSV content
+    const headers = ['Sr. No.', 'SKU', 'Product', 'Date', 'Time', 'Quantity', 'Unit Price', 'Total Amount', 'Payment Method', 'Customer Name', 'Status'];
+    const csvContent = [
+        headers.join(','),
+        ...filteredSales.map((sale, index) => {
+            const serialNumber = (index + 1).toString().padStart(2, '0');
+            const sku = sale.sku || sale.product_sku || generateSKU(sale.product_name);
+            const row = [
+                serialNumber,
+                sku,
+                `"${sale.product_name || ''}"`,
+                sale.date || '',
+                sale.time || '',
+                sale.quantity || 0,
+                sale.unit_price || 0,
+                sale.total_amount || 0,
+                sale.payment_method || '',
+                `"${sale.customer_name || ''}"`,
+                'Paid'
+            ];
+            return row.join(',');
+        })
+    ].join('\n');
+    
+    // Create blob and download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    
+    // Generate filename with date range
+    const filename = `transaction_history_${fromDate}_to_${toDate}.csv`;
+    
+    link.setAttribute('href', url);
+    link.setAttribute('download', filename);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    // Close modal and show success message
+    const modal = bootstrap.Modal.getInstance(document.getElementById('dateRangeModal'));
+    modal.hide();
+    
+    showAlert(`Downloaded ${filteredSales.length} transactions successfully`, 'success');
+}
+
+// Utility functions
+function formatDate(dateString) {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
+    });
+}
+
+function showAlert(message, type) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    alertDiv.style.top = '20px';
+    alertDiv.style.right = '20px';
+    alertDiv.style.zIndex = '9999';
+    alertDiv.style.minWidth = '300px';
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(alertDiv);
+    
+    setTimeout(() => {
+        if (alertDiv.parentNode) {
+            alertDiv.parentNode.removeChild(alertDiv);
+        }
+    }, 3000);
+}
+
+// Initialize custom select dropdowns
+function initializeCustomSelects() {
+    // Main payment filter
+    const mainDisplay = document.getElementById('customPaymentFilterDisplay');
+    const mainOptions = document.getElementById('customPaymentFilterOptions');
+    const mainSelect = document.getElementById('paymentFilter');
+    
+    if (mainDisplay && mainOptions && mainSelect) {
+        mainDisplay.addEventListener('click', function() {
+            const wrapper = this.closest('.custom-select-wrapper');
+            // Close other dropdowns
+            document.querySelectorAll('.custom-select-wrapper').forEach(w => {
+                if (w !== wrapper) w.classList.remove('active');
+            });
+            wrapper.classList.toggle('active');
+        });
+        
+        mainOptions.querySelectorAll('.custom-option').forEach(option => {
+            option.addEventListener('click', function() {
+                const value = this.dataset.value;
+                const text = this.innerHTML;
+                
+                mainSelect.value = value;
+                mainDisplay.innerHTML = text;
+                mainOptions.querySelectorAll('.custom-option').forEach(o => o.classList.remove('selected'));
+                this.classList.add('selected');
+                
+                const wrapper = this.closest('.custom-select-wrapper');
+                wrapper.classList.remove('active');
+                
+                // Trigger the original filter function
+                filterTransactions();
+            });
+        });
+    }
+    
+    // Record Sale form payment method
+    const saleDisplay = document.getElementById('customPaymentMethodDisplay');
+    const saleOptions = document.getElementById('customPaymentMethodOptions');
+    const saleSelect = document.getElementById('paymentMethod');
+    
+    if (saleDisplay && saleOptions && saleSelect) {
+        saleDisplay.addEventListener('click', function() {
+            const wrapper = this.closest('.custom-select-wrapper');
+            // Close other dropdowns
+            document.querySelectorAll('.custom-select-wrapper').forEach(w => {
+                if (w !== wrapper) w.classList.remove('active');
+            });
+            wrapper.classList.toggle('active');
+        });
+        
+        saleOptions.querySelectorAll('.custom-option').forEach(option => {
+            option.addEventListener('click', function() {
+                const value = this.dataset.value;
+                const text = this.innerHTML;
+                
+                saleSelect.value = value;
+                saleDisplay.innerHTML = text;
+                saleOptions.querySelectorAll('.custom-option').forEach(o => o.classList.remove('selected'));
+                this.classList.add('selected');
+                
+                const wrapper = this.closest('.custom-select-wrapper');
+                wrapper.classList.remove('active');
+            });
+        });
+    }
+    
+    // Download modal payment filter
+    const downloadDisplay = document.getElementById('customDownloadPaymentFilterDisplay');
+    const downloadOptions = document.getElementById('customDownloadPaymentFilterOptions');
+    const downloadSelect = document.getElementById('downloadPaymentFilter');
+    
+    if (downloadDisplay && downloadOptions && downloadSelect) {
+        downloadDisplay.addEventListener('click', function() {
+            const wrapper = this.closest('.custom-select-wrapper');
+            // Close other dropdowns
+            document.querySelectorAll('.custom-select-wrapper').forEach(w => {
+                if (w !== wrapper) w.classList.remove('active');
+            });
+            wrapper.classList.toggle('active');
+        });
+        
+        downloadOptions.querySelectorAll('.custom-option').forEach(option => {
+            option.addEventListener('click', function() {
+                const value = this.dataset.value;
+                const text = this.innerHTML;
+                
+                downloadSelect.value = value;
+                downloadDisplay.innerHTML = text;
+                downloadOptions.querySelectorAll('.custom-option').forEach(o => o.classList.remove('selected'));
+                this.classList.add('selected');
+                
+                const wrapper = this.closest('.custom-select-wrapper');
+                wrapper.classList.remove('active');
+            });
+        });
+    }
+}
+
+// Close dropdowns when clicking outside
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('.custom-select-wrapper')) {
+        document.querySelectorAll('.custom-select-wrapper').forEach(wrapper => {
+            wrapper.classList.remove('active');
+        });
+    }
+});
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+    loadSalesData();
+    initializeCustomSelects();
+    initializeTabs();
+    
+    // Set today's date as default filter
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('dateFilter').value = today;
+});
+
+// Custom tab initialization to ensure proper switching
+function initializeTabs() {
+    const triggerTabList = [].slice.call(document.querySelectorAll('#salesTabs button'));
+    
+    triggerTabList.forEach(function(triggerEl) {
+        const tabTrigger = new bootstrap.Tab(triggerEl);
+        
+        triggerEl.addEventListener('click', function(event) {
+            event.preventDefault();
+            tabTrigger.show();
+        });
+    });
+    
+    // Ensure only active tab is visible
+    const tabButtons = document.querySelectorAll('#salesTabs button');
+    tabButtons.forEach(button => {
+        button.addEventListener('shown.bs.tab', function(e) {
+            // Hide all tab panes
+            const allPanes = document.querySelectorAll('.tab-pane');
+            allPanes.forEach(pane => {
+                pane.classList.remove('show', 'active');
+            });
+            
+            // Show the target pane
+            const target = document.querySelector(e.target.getAttribute('data-bs-target'));
+            if (target) {
+                target.classList.add('show', 'active');
+            }
+        });
+    });
+}
+</script>
+
+<style>
+/* Sales Container - Matches system pattern */
+.sales-container {
+    padding: 2rem;
+    max-width: 100%;
+}
+
+/* Page Header - Matches other pages */
+.page-header {
+    margin-bottom: 2rem;
+}
+
+.page-header h1 {
+    color: #2c3e50;
+    font-size: 2rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.page-header p {
+    color: #6c757d;
+    margin: 0;
+}
+
+/* Content Section - Matches system sections */
+.content-section {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e9ecef;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #f8f9fa;
+}
+
+.section-header h3 {
+    color: #2c3e50;
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.header-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+/* Form Layout - Matches system forms */
+.form-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: #495057;
+    font-size: 0.9rem;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e9ecef;
+}
+
+/* Table Container - Matches system tables */
+.table-container {
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid #e9ecef;
+}
+
+.table {
+    margin-bottom: 0;
+    font-size: 0.9rem;
+}
+
+.table th {
+    background: #f8f9fa;
+    border-top: none;
+    font-weight: 600;
+    color: #495057;
+    font-size: 0.85rem;
+    padding: 0.75rem;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.table td {
+    padding: 0.75rem;
+    vertical-align: middle;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.table tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+.payment-badge {
+    padding: 0.35rem 0.6rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.payment-badge.cash {
+    background: #d4edda;
+    color: #155724;
+}
+
+.payment-badge.card {
+    background: #d1ecf1;
+    color: #0c5460;
+}
+
+.payment-badge.upi {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.payment-badge.other {
+    background: #e2e3e5;
+    color: #383d41;
+}
+
+/* Custom Select Dropdown Styles */
+.custom-select-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.custom-select-display {
+    cursor: pointer;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: white;
+    border: 1px solid #ced4da;
+    border-radius: 0.25rem;
+    padding: 0.375rem 0.75rem;
+    font-size: 0.875rem;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.custom-select-display:hover {
+    border-color: #86b7fe;
+}
+
+.custom-select-display::after {
+    content: '\f078';
+    font-family: 'Font Awesome 6 Free';
+    font-weight: 900;
+    margin-left: auto;
+    transition: transform 0.2s ease;
+}
+
+.custom-select-wrapper.active .custom-select-display::after {
+    transform: rotate(180deg);
+}
+
+.custom-select-options {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid #ced4da;
+    border-top: none;
+    border-radius: 0 0 0.25rem 0.25rem;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 1000;
+    display: none;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.custom-select-wrapper.active .custom-select-options {
+    display: block;
+}
+
+.custom-option {
+    padding: 0.5rem 0.75rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    transition: background-color 0.15s ease;
+    border-bottom: 1px solid #f8f9fa;
+}
+
+.custom-option:last-child {
+    border-bottom: none;
+}
+
+.custom-option:hover {
+    background-color: #f8f9fa;
+}
+
+.custom-option.selected {
+    background-color: #e9ecef;
+    font-weight: 500;
+}
+
+/* Search Suggestions Styles */
+.search-wrapper {
+    position: relative;
+}
+
+.search-suggestions {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid #ced4da;
+    border-top: none;
+    border-radius: 0 0 0.25rem 0.25rem;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 1000;
+    display: none;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.search-suggestions.show {
+    display: block;
+}
+
+.suggestion-item {
+    padding: 0.5rem 0.75rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    transition: background-color 0.15s ease;
+    border-bottom: 1px solid #f8f9fa;
+}
+
+.suggestion-item:last-child {
+    border-bottom: none;
+}
+
+.suggestion-item:hover {
+    background-color: #f8f9fa;
+}
+
+.suggestion-item.selected {
+    background-color: #e9ecef;
+    font-weight: 500;
+}
+
+.suggestion-item .sku {
+    font-size: 0.75rem;
+    color: #6c757d;
+    margin-left: auto;
+}
+
+.suggestion-item .stock {
+    font-size: 0.75rem;
+    margin-left: 0.5rem;
+}
+
+.suggestion-item .stock.low {
+    color: #dc3545;
+}
+
+.suggestion-item .stock.medium {
+    color: #ffc107;
+}
+
+.suggestion-item .stock.high {
+    color: #28a745;
+}
+
+/* Responsive Design - Matches system breakpoints */
+@media (max-width: 1200px) {
+    .sales-container {
+        padding: 1.5rem;
+    }
+    
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+    
+    .section-header {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: flex-start;
+    }
+    
+    .header-actions {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .header-actions .form-control,
+    .header-actions .form-select {
+        width: 100%;
+    }
+}
+
+@media (max-width: 768px) {
+    .sales-container {
+        padding: 1rem;
+    }
+    
+    .page-header h1 {
+        font-size: 1.5rem;
+    }
+    
+    .content-section {
+        padding: 1rem;
+    }
+    
+    .table {
+        font-size: 0.8rem;
+    }
+    
+    .table th,
+    .table td {
+        padding: 0.5rem;
+    }
+}
+
+/* Tab Navigation Styles */
+.tab-navigation {
+    margin-bottom: 30px;
+}
+
+.nav-tabs {
+    border-bottom: 2px solid #e9ecef;
+}
+
+.nav-tabs .nav-link {
+    color: #6c757d;
+    border: none;
+    border-bottom: 2px solid transparent;
+    padding: 12px 20px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.nav-tabs .nav-link:hover {
+    color: #3498db;
+    border-bottom-color: #3498db;
+}
+
+.nav-tabs .nav-link.active {
+    color: #3498db;
+    background: none;
+    border-bottom: 2px solid #3498db;
+}
+
+.nav-tabs .nav-link i {
+    margin-right: 8px;
+}
+
+/* Tab Content Styles */
+.tab-content {
+    margin-top: 20px;
+}
+
+.tab-pane {
+    display: none;
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+}
+
+.tab-pane.show {
+    display: block;
+    opacity: 1;
+}
+
+.tab-pane.active {
+    display: block;
+}
+
+.tab-pane.show.active {
+    opacity: 1;
+}
+
+.tab-pane {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Responsive Design for Tabs */
+@media (max-width: 768px) {
+    .nav-tabs .nav-link {
+        padding: 8px 12px;
+        font-size: 14px;
+    }
+    
+    .nav-tabs .nav-link i {
+        margin-right: 5px;
+    }
+}
+</style>
+{% endblock %}

@@ -1,0 +1,1356 @@
+{% extends "base.html" %}
+
+{% block title %}Reports - Smart Inventory Management System{% endblock %}
+
+{% block head %}
+<!-- Add jsPDF library for client-side PDF generation -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="reports-container">
+    <div class="page-header">
+        <h1>Reports & Analytics</h1>
+        <p>Generate and analyze business reports</p>
+    </div>
+
+    <!-- Report Generation -->
+    <div class="report-generator">
+        <div class="generator-header">
+            <h3>Generate Report</h3>
+        </div>
+        
+        <form id="reportForm" class="report-form">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="reportType">Report Type</label>
+                    <select class="form-select" id="reportType" required>
+                        <option value="">Select Report Type</option>
+                        <option value="sales">Sales Report</option>
+                        <option value="inventory">Inventory Report</option>
+                        <option value="products">Products Report</option>
+                        <option value="financial">Financial Summary</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="startDate">Start Date</label>
+                    <input type="date" class="form-control" id="startDate" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="endDate">End Date</label>
+                    <input type="date" class="form-control" id="endDate" required>
+                </div>
+            </div>
+            
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" onclick="resetReportForm()">Clear</button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-chart-bar"></i> Generate Report
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Quick Reports -->
+    <div class="quick-reports">
+        <h3>Quick Reports</h3>
+        <div class="quick-report-buttons">
+            <button class="quick-report-btn" onclick="generateQuickReport('today')">
+                <i class="fas fa-calendar-day"></i>
+                <span>Today's Sales</span>
+            </button>
+            <button class="quick-report-btn" onclick="generateQuickReport('week')">
+                <i class="fas fa-calendar-week"></i>
+                <span>This Week</span>
+            </button>
+            <button class="quick-report-btn" onclick="generateQuickReport('month')">
+                <i class="fas fa-calendar-alt"></i>
+                <span>This Month</span>
+            </button>
+            <button class="quick-report-btn" onclick="generateQuickReport('lowstock')">
+                <i class="fas fa-exclamation-triangle"></i>
+                <span>Low Stock</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Report Display -->
+    <div class="report-display" id="reportDisplay" style="display: none;">
+        <div class="report-header">
+            <h3 id="reportTitle">Report Title</h3>
+                    </div>
+        
+        <!-- Enhanced Download Section -->
+        <div class="download-section" id="downloadSection" style="display: none;">
+            <div class="download-header">
+                <h4><i class="fas fa-download"></i> Download Report</h4>
+                <p>Choose your preferred format to download the report</p>
+            </div>
+            <div class="download-buttons">
+                <button class="download-btn csv-btn" onclick="exportReport('csv')" id="csvDownloadBtn">
+                    <div class="download-icon">
+                        <i class="fas fa-file-csv"></i>
+                        <div class="loading-spinner" style="display: none;">
+                            <i class="fas fa-spinner fa-spin"></i>
+                        </div>
+                    </div>
+                    <div class="download-info">
+                        <h5>CSV Format</h5>
+                        <p>Excel-compatible spreadsheet</p>
+                    </div>
+                    <div class="download-arrow">
+                        <i class="fas fa-download"></i>
+                    </div>
+                </button>
+                
+                <button class="download-btn pdf-btn" onclick="exportReport('pdf')" id="pdfDownloadBtn">
+                    <div class="download-icon">
+                        <i class="fas fa-file-pdf"></i>
+                        <div class="loading-spinner" style="display: none;">
+                            <i class="fas fa-spinner fa-spin"></i>
+                        </div>
+                    </div>
+                    <div class="download-info">
+                        <h5>PDF Format</h5>
+                        <p>Professional document format</p>
+                    </div>
+                    <div class="download-arrow">
+                        <i class="fas fa-arrow-down"></i>
+                    </div>
+                </button>
+                
+                <button class="download-btn print-btn" onclick="printReport()" id="printDownloadBtn">
+                    <div class="download-icon">
+                        <i class="fas fa-print"></i>
+                        <div class="loading-spinner" style="display: none;">
+                            <i class="fas fa-spinner fa-spin"></i>
+                        </div>
+                    </div>
+                    <div class="download-info">
+                        <h5>Print</h5>
+                        <p>Print directly to printer</p>
+                    </div>
+                    <div class="download-arrow">
+                        <i class="fas fa-arrow-down"></i>
+                    </div>
+                </button>
+            </div>
+        </div>
+        
+        <div class="report-summary" id="reportSummary">
+            <!-- Summary cards will be displayed here -->
+        </div>
+        
+        <div class="report-content">
+            <div class="report-charts" id="reportCharts">
+                <!-- Charts will be displayed here -->
+            </div>
+            
+            <div class="report-table" id="reportTable">
+                <!-- Table data will be displayed here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Reports -->
+    <div class="recent-reports">
+        <h3>Recent Reports</h3>
+        <div class="reports-list" id="reportsList">
+            <!-- Recent reports will be displayed here -->
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Reports page translations
+const reportsTranslations = {
+    en: {
+        reportsAnalytics: 'Reports & Analytics',
+        generateAnalyzeReports: 'Generate and analyze business reports',
+        generateReport: 'Generate Report',
+        reportType: 'Report Type',
+        selectReportType: 'Select Report Type',
+        salesReport: 'Sales Report',
+        inventoryReport: 'Inventory Report',
+        productsReport: 'Products Report',
+        financialReport: 'Financial Report',
+        startDate: 'Start Date',
+        endDate: 'End Date',
+        generate: 'Generate',
+        reportPreview: 'Report Preview',
+        noReportGenerated: 'No report generated yet',
+        downloadCSV: 'CSV Format',
+        downloadPDF: 'PDF Format',
+        excelCompatible: 'Excel-compatible spreadsheet',
+        professionalDocument: 'Professional document format',
+        last7Days: 'Last 7 days',
+        last30Days: 'Last 30 days',
+        last3Months: 'Last 3 months',
+        customRange: 'Custom Range',
+        totalRevenue: 'Total Revenue',
+        totalTransactions: 'Total Transactions',
+        avgTransactionValue: 'Avg Transaction Value',
+        topProduct: 'Top Product',
+        totalProducts: 'Total Products',
+        lowStockItems: 'Low Stock Items',
+        totalValue: 'Total Value',
+        warehouseCapacity: 'Warehouse Capacity',
+        categories: 'Categories',
+        avgPrice: 'Avg Price',
+        totalStockValue: 'Total Stock Value',
+        totalRevenue2: 'Total Revenue',
+        totalTransactions2: 'Total Transactions',
+        avgTransactionValue2: 'Avg Transaction Value',
+        estimatedProfit: 'Estimated Profit',
+        date: 'Date',
+        transactionId: 'Transaction ID',
+        amount: 'Amount',
+        itemsCount: 'Items Count',
+        name: 'Name',
+        category: 'Category',
+        stockQuantity: 'Stock Quantity',
+        minStockLevel: 'Min Stock Level',
+        unitPrice: 'Unit Price',
+        totalValue2: 'Total Value',
+        status: 'Status',
+        description: 'Description',
+        supplier: 'Supplier',
+        sku: 'SKU',
+        salesOverview: 'Sales Overview',
+        inventoryStatus: 'Inventory Status',
+        topSellingProducts: 'Top Selling Products',
+        lowStockWarnings: 'Low Stock Warnings',
+        recentNotifications: 'Recent Notifications'
+    },
+    te: {
+        reportsAnalytics: 'నివేదికలు & విశ్లేషణలు',
+        generateAnalyzeReports: 'వ్యాపార నివేదికలను రూపొందించండి మరియు విశ్లేషించండి',
+        generateReport: 'నివేదికను రూపొందించండి',
+        reportType: 'నివేదిక రకం',
+        selectReportType: 'నివేదిక రకాన్ని ఎంచుకోండి',
+        salesReport: 'అమ్మకాల నివేదిక',
+        inventoryReport: 'ఇన్వెంటరీ నివేదిక',
+        productsReport: 'ఉత్పత్తుల నివేదిక',
+        financialReport: 'ఆర్థిక నివేదిక',
+        startDate: 'ప్రారంభ తేదీ',
+        endDate: 'ముగింపు తేదీ',
+        generate: 'రూపొందించు',
+        reportPreview: 'నివేదిక ప్రివ్యూ',
+        noReportGenerated: 'ఇంకా నివేదిక రూపొందించబడలేదు',
+        downloadCSV: 'CSV ఫార్మాట్',
+        downloadPDF: 'PDF ఫార్మాట్',
+        excelCompatible: 'ఎక్సెల్-అనుకూల స్ప్రెడ్‌షీట్',
+        professionalDocument: 'ప్రొఫెషనల్ డాక్యుమెంట్ ఫార్మాట్',
+        last7Days: 'గత 7 రోజులు',
+        last30Days: 'గత 30 రోజులు',
+        last3Months: 'గత 3 నెలలు',
+        customRange: 'అనుకూల పరిధి',
+        totalRevenue: 'మొత్తం ఆదాయం',
+        totalTransactions: 'మొత్తం లావాదేవీలు',
+        avgTransactionValue: 'సగటు లావాదేవీ విలువ',
+        topProduct: 'అగ్ర ఉత్పత్తి',
+        totalProducts: 'మొత్తం ఉత్పత్తులు',
+        lowStockItems: 'తక్కువ స్టాక్ అంశాలు',
+        totalValue: 'మొత్త విలువ',
+        warehouseCapacity: 'గిడ్జా సామర్థ్యం',
+        categories: 'వర్గాలు',
+        avgPrice: 'సగటు ధర',
+        totalStockValue: 'మొత్తం స్టాక్ విలువ',
+        totalRevenue2: 'మొత్తం ఆదాయం',
+        totalTransactions2: 'మొత్తం లావాదేవీలు',
+        avgTransactionValue2: 'సగటు లావాదేవీ విలువ',
+        estimatedProfit: 'అంచనా లాభం',
+        date: 'తేదీ',
+        transactionId: 'లావాదేవీ ID',
+        amount: 'మొత్తం',
+        itemsCount: 'అంశాల సంఖ్య',
+        name: 'పేరు',
+        category: 'వర్గం',
+        stockQuantity: 'స్టాక్ పరిమాణం',
+        minStockLevel: 'కనీస స్టాక్ స్థాయి',
+        unitPrice: 'యూనిట్ ధర',
+        totalValue2: 'మొత్తం విలువ',
+        status: 'స్థితి',
+        description: 'వివరణ',
+        supplier: 'సరఫరాదారు',
+        sku: 'SKU',
+        salesOverview: 'అమ్మకాల అవలోకనం',
+        inventoryStatus: 'ఇన్వెంటరీ స్థితి',
+        topSellingProducts: 'అత్యధికంగా అమ్మకమయ్యే ఉత్పత్తులు',
+        lowStockWarnings: 'తక్కువ స్టాక్ హెచ్చరికలు',
+        recentNotifications: 'ఇటీవలి ప్రకటనలు'
+    }
+};
+
+// Apply reports page translations
+function applyReportsTranslations(language) {
+    const t = reportsTranslations[language];
+    
+    // Update page header
+    const pageTitle = document.querySelector('.page-header h1');
+    if (pageTitle) pageTitle.textContent = t.reportsAnalytics;
+    
+    const pageDesc = document.querySelector('.page-header p');
+    if (pageDesc) pageDesc.textContent = t.generateAnalyzeReports;
+    
+    // Update report generator
+    const generatorHeader = document.querySelector('.generator-header h3');
+    if (generatorHeader) generatorHeader.textContent = t.generateReport;
+    
+    // Update form labels
+    const labelTranslations = {
+        'Report Type': t.reportType,
+        'Start Date': t.startDate,
+        'End Date': t.endDate
+    };
+    
+    document.querySelectorAll('.form-label').forEach(label => {
+        const text = label.textContent.trim();
+        if (labelTranslations[text]) {
+            label.textContent = labelTranslations[text];
+        }
+    });
+    
+    // Update select options
+    const selectTranslations = {
+        'Select Report Type': t.selectReportType,
+        'Sales Report': t.salesReport,
+        'Inventory Report': t.inventoryReport,
+        'Products Report': t.productsReport,
+        'Financial Report': t.financialReport
+    };
+    
+    document.querySelectorAll('option').forEach(option => {
+        const text = option.textContent.trim();
+        if (selectTranslations[text]) {
+            option.textContent = selectTranslations[text];
+        }
+    });
+    
+    // Update buttons
+    document.querySelectorAll('.btn').forEach(btn => {
+        if (btn.textContent.includes('Generate')) btn.textContent = t.generate;
+    });
+    
+    // Update download buttons
+    document.querySelectorAll('.download-btn').forEach(btn => {
+        const title = btn.querySelector('h5');
+        if (title) {
+            if (title.textContent.includes('CSV')) title.textContent = t.downloadCSV;
+            else if (title.textContent.includes('PDF')) title.textContent = t.downloadPDF;
+        }
+        
+        const desc = btn.querySelector('p');
+        if (desc) {
+            if (desc.textContent.includes('Excel')) desc.textContent = t.excelCompatible;
+            else if (desc.textContent.includes('Professional')) desc.textContent = t.professionalDocument;
+        }
+    });
+    
+    // Update time range options
+    const rangeTranslations = {
+        'Last 7 days': t.last7Days,
+        'Last 30 days': t.last30Days,
+        'Last 3 months': t.last3Months,
+        'Custom Range': t.customRange
+    };
+    
+    document.querySelectorAll('.form-select option').forEach(option => {
+        const text = option.textContent.trim();
+        if (rangeTranslations[text]) {
+            option.textContent = rangeTranslations[text];
+        }
+    });
+    
+    // Update summary items
+    const summaryTranslations = {
+        'Total Revenue': t.totalRevenue,
+        'Total Transactions': t.totalTransactions,
+        'Avg Transaction Value': t.avgTransactionValue,
+        'Top Product': t.topProduct,
+        'Total Products': t.totalProducts,
+        'Low Stock Items': t.lowStockItems,
+        'Total Value': t.totalValue,
+        'Warehouse Capacity': t.warehouseCapacity,
+        'Categories': t.categories,
+        'Avg Price': t.avgPrice,
+        'Total Stock Value': t.totalStockValue,
+        'Estimated Profit': t.estimatedProfit
+    };
+    
+    document.querySelectorAll('.summary-item').forEach(item => {
+        const label = item.querySelector('span');
+        if (label && summaryTranslations[label.textContent.trim()]) {
+            label.textContent = summaryTranslations[label.textContent.trim()];
+        }
+    });
+    
+    // Update chart headers
+    const chartTranslations = {
+        'Sales Overview': t.salesOverview,
+        'Inventory Status': t.inventoryStatus,
+        'Top Selling Products': t.topSellingProducts
+    };
+    
+    document.querySelectorAll('.chart-header h3').forEach(h3 => {
+        const text = h3.textContent.trim();
+        if (chartTranslations[text]) {
+            h3.textContent = chartTranslations[text];
+        }
+    });
+}
+
+// Override global translation function to include reports translations
+const originalApplyGlobalTranslations = window.applyGlobalTranslations;
+if (originalApplyGlobalTranslations) {
+    window.applyGlobalTranslations = function(language) {
+        originalApplyGlobalTranslations(language);
+        applyReportsTranslations(language);
+    };
+}
+
+let currentReport = null;
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+    // Set default dates
+    const today = new Date();
+    const lastWeek = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+    
+    document.getElementById('endDate').value = today.toISOString().split('T')[0];
+    document.getElementById('startDate').value = lastWeek.toISOString().split('T')[0];
+    
+    loadRecentReports();
+});
+
+// Generate report
+document.getElementById('reportForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const reportType = document.getElementById('reportType').value;
+    const startDate = document.getElementById('startDate').value;
+    const endDate = document.getElementById('endDate').value;
+    
+    await generateReport(reportType, startDate, endDate);
+});
+
+// Generate report
+async function generateReport(reportType, startDate, endDate) {
+    try {
+        const response = await fetch('/api/reports/generate', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                report_type: reportType,
+                start_date: startDate,
+                end_date: endDate
+            })
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            currentReport = result.report;
+            displayReport(currentReport);
+            showAlert('Report generated successfully', 'success');
+        } else {
+            const error = await response.json();
+            showAlert(error.error || 'Failed to generate report', 'error');
+        }
+    } catch (error) {
+        console.error('Error generating report:', error);
+    }
+}
+
+// Display report
+function displayReport(report) {
+    const display = document.getElementById('reportDisplay');
+    const title = document.getElementById('reportTitle');
+    const summary = document.getElementById('reportSummary');
+    const charts = document.getElementById('reportCharts');
+    const table = document.getElementById('reportTable');
+    const downloadSection = document.getElementById('downloadSection');
+    
+    display.style.display = 'block';
+    title.textContent = `${report.title} (${report.start_date} to ${report.end_date})`;
+    
+    // Show download section
+    downloadSection.style.display = 'block';
+    
+    // Display summary
+    if (report.type === "sales") {
+
+        summary.innerHTML = `
+            <div class="summary-card">
+                <h4>${formatValue(report.summary.avg_transaction)}</h4>
+                <p>Avg Transaction</p>
+            </div>
+
+            <div class="summary-card">
+                <h4>${report.summary.top_product}</h4>
+                <p>Top Product</p>
+            </div>
+
+            <div class="summary-card">
+                <h4>${formatValue(report.summary.total_sales)}</h4>
+                <p>Total Sales</p>
+            </div>
+
+            <div class="summary-card">
+                <h4>${report.summary.total_transactions}</h4>
+                <p>Total Transactions</p>
+            </div>
+        </div>
+    `;
+
+    } else {
+
+        summary.innerHTML = Object.entries(report.summary).map(([key, value]) => {
+
+            const label = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+
+            return `
+                <div class="summary-card">
+                    <h4>${formatValue(value, key)}</h4>
+                    <p>${label}</p>
+                </div>
+            `;
+        
+        }).join('');
+
+    }
+    
+    // Display charts
+    charts.innerHTML = "";
+    
+    // Display table
+    table.innerHTML = `
+        <h4>Detailed Data</h4>
+        <div class="table-responsive">
+            <table class="report-table-data">
+                <thead>
+                    <tr>
+                        ${Object.keys(report.data[0] || {}).map(key => 
+                            `<th>${key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</th>`
+                        ).join('')}
+                    </tr>
+                </thead>
+                <tbody>
+                    ${report.data.map(row => 
+                        `<tr>
+                            ${Object.values(row).map(value => 
+                                `<td>${formatValue(value)}</td>`
+                            ).join('')}
+                        </tr>`
+                    ).join('')}
+                </tbody>
+            </table>
+        </div>
+    `;
+    
+    // Create chart
+    setTimeout(() => createReportChart(report), 100);
+}
+
+// Create report chart
+function createReportChart(report) {
+    const ctx = document.getElementById('reportChart');
+    if (!ctx) return;
+    
+    const chartData = report.data.map(item => ({
+        label: item.product_name || item.name,
+        value: item.revenue || item.total_value || item.quantity
+    }));
+    
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: chartData.map(d => d.label),
+            datasets: [{
+                label: report.type === 'sales' ? 'Revenue' : 'Value',
+                data: chartData.map(d => d.value),
+                backgroundColor: '#4A90E2'
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+}
+
+// Generate quick report
+function generateQuickReport(type) {
+    const today = new Date();
+    let startDate, endDate, reportType;
+    
+    switch(type) {
+        case 'today':
+            startDate = endDate = today.toISOString().split('T')[0];
+            reportType = 'sales';
+            break;
+        case 'week':
+            endDate = today.toISOString().split('T')[0];
+            startDate = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+            reportType = 'sales';
+            break;
+        case 'month':
+            endDate = today.toISOString().split('T')[0];
+            startDate = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+            reportType = 'sales';
+            break;
+        case 'lowstock':
+            startDate = endDate = today.toISOString().split('T')[0];
+            reportType = 'inventory';
+            break;
+    }
+    
+    document.getElementById('reportType').value = reportType;
+    document.getElementById('startDate').value = startDate;
+    document.getElementById('endDate').value = endDate;
+    
+    generateReport(reportType, startDate, endDate);
+}
+
+// Export report
+function exportReport(format) {
+    if (!currentReport) {
+        showAlert('No report to export', 'warning');
+        return;
+    }
+    
+    if (format === 'csv') {
+        exportToCSV();
+    } else if (format === 'pdf') {
+        exportToPDF();
+    }
+}
+
+// Print report
+function printReport() {
+    if (!currentReport) {
+        showAlert('No report to print', 'warning');
+        return;
+    }
+    
+    window.print();
+}
+
+// Reset form
+function resetReportForm() {
+    document.getElementById('reportForm').reset();
+    
+    // Reset default dates
+    const today = new Date();
+    const lastWeek = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+    
+    document.getElementById('endDate').value = today.toISOString().split('T')[0];
+    document.getElementById('startDate').value = lastWeek.toISOString().split('T')[0];
+}
+
+// Format value for display
+function formatValue(value, key) {
+
+    if (typeof value === 'number') {
+
+        const currencyFields = [
+            "total_sales",
+            "total_revenue",
+            "avg_transaction",
+            "avg_transaction_value",
+            "estimated_profit",
+            "total_value",
+            "total_stock_value"
+        ];
+
+        if (currencyFields.includes(key)) {
+            return formatCurrency(value);
+        }
+
+        return value.toLocaleString();
+    }
+
+    return value;
+}
+
+// Format currency
+function formatCurrency(amount) {
+    if (window.currencyManager) {
+        return window.currencyManager.formatCurrency(amount);
+    }
+    // Fallback to INR formatting
+    return new Intl.NumberFormat('en-IN', {
+        style: 'currency',
+        currency: 'INR'
+    }).format(amount);
+}
+
+// Show alert
+function showAlert(message, type) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    const container = document.querySelector('.reports-container');
+    container.insertBefore(alertDiv, container.firstChild);
+    
+    setTimeout(() => {
+        alertDiv.remove();
+    }, 3000);
+}
+
+// Load recent reports
+function loadRecentReports() {
+    // Load recent reports from database
+    fetch('/api/reports/recent', {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        const reportsList = document.getElementById('reportsList');
+        if (data.reports && data.reports.length > 0) {
+            reportsList.innerHTML = data.reports.map(report => `
+                <div class="report-item">
+                    <div class="report-info">
+                        <h4>${report.title}</h4>
+                        <p>Generated on ${new Date(report.generated_at).toLocaleDateString()}</p>
+                    </div>
+                    <div class="report-actions">
+                        <button class="btn btn-sm btn-outline-primary" onclick="viewExistingReport('${report._id}')">
+                            <i class="fas fa-eye"></i> View
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        } else {
+            reportsList.innerHTML = '<p>No recent reports found. Generate your first report!</p>';
+        }
+    })
+    .catch(error => {
+        console.error('Error loading recent reports:', error);
+        reportsList.innerHTML = '<p>Error loading recent reports.</p>';
+    });
+}
+
+// Export to CSV
+async function exportToCSV() {
+    try {
+        // Show loading state
+        const csvBtn = document.getElementById('csvDownloadBtn');
+        const csvIcon = csvBtn.querySelector('.fa-file-csv');
+        const csvSpinner = csvBtn.querySelector('.loading-spinner');
+        
+        csvIcon.style.display = 'none';
+        csvSpinner.style.display = 'block';
+        csvBtn.disabled = true;
+        
+        if (!currentReport || !currentReport._id) {
+            showAlert('Please generate a report first', 'warning');
+            return;
+        }
+        
+        // Use backend endpoint for real CSV export
+        const response = await fetch('/api/reports/export/csv', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                report_id: currentReport._id
+            })
+        });
+        
+        if (response.ok) {
+            console.log('Response OK, creating blob...');
+            const blob = await response.blob();
+            console.log('Blob created:', blob.size, 'bytes');
+            
+            // Create download link
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = `${currentReport.type}_report_${currentReport.start_date}_to_${currentReport.end_date}.csv`;
+            
+            // Trigger download
+            document.body.appendChild(a);
+            a.click();
+            
+            // Cleanup
+            setTimeout(() => {
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+            }, 100);
+            
+            showAlert('CSV exported successfully', 'success');
+        } else {
+            console.error('Response not OK:', response.status, response.statusText);
+            const error = await response.json();
+            console.error('Error details:', error);
+            showAlert(error.error || 'Failed to export CSV', 'error');
+        }
+    } catch (error) {
+        console.error('Error exporting CSV:', error);
+        showAlert('Failed to export CSV', 'error');
+    } finally {
+        // Reset loading state
+        const csvBtn = document.getElementById('csvDownloadBtn');
+        const csvIcon = csvBtn.querySelector('.fa-file-csv');
+        const csvSpinner = csvBtn.querySelector('.loading-spinner');
+        
+        csvIcon.style.display = 'block';
+        csvSpinner.style.display = 'none';
+        csvBtn.disabled = false;
+    }
+}
+
+// Export to PDF
+async function exportToPDF() {
+    try {
+        // Show loading state
+        const pdfBtn = document.getElementById('pdfDownloadBtn');
+        const pdfIcon = pdfBtn.querySelector('.fa-file-pdf');
+        const pdfSpinner = pdfBtn.querySelector('.loading-spinner');
+        
+        pdfIcon.style.display = 'none';
+        pdfSpinner.style.display = 'block';
+        pdfBtn.disabled = true;
+        
+        if (!currentReport || !currentReport._id) {
+            showAlert('Please generate a report first', 'warning');
+            return;
+        }
+        
+        // Use backend endpoint for real PDF export
+        const response = await fetch('/api/reports/export/pdf', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                report_id: currentReport._id
+            })
+        });
+        
+        if (response.ok) {
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${currentReport.type}_report_${currentReport.start_date}_to_${currentReport.end_date}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            showAlert('PDF exported successfully', 'success');
+        } else {
+            const error = await response.json();
+            if (error.error && error.error.includes('reportlab')) {
+                showAlert('PDF export requires reportlab library. Please install it first.', 'warning');
+            } else {
+                showAlert(error.error || 'Failed to export PDF', 'error');
+            }
+        }
+    } catch (error) {
+        console.error('Error exporting PDF:', error);
+        showAlert('Failed to export PDF', 'error');
+    } finally {
+        // Reset loading state
+        const pdfBtn = document.getElementById('pdfDownloadBtn');
+        const pdfIcon = pdfBtn.querySelector('.fa-file-pdf');
+        const pdfSpinner = pdfBtn.querySelector('.loading-spinner');
+        
+        pdfIcon.style.display = 'block';
+        pdfSpinner.style.display = 'none';
+        pdfBtn.disabled = false;
+    }
+}
+
+// View existing report
+function viewExistingReport(reportId) {
+    // Fetch the specific report from database
+    fetch(`/api/reports/get/${reportId}`, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.report) {
+            currentReport = data.report;
+            displayReport(currentReport);
+        } else {
+            showAlert('Report not found', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error loading report:', error);
+        showAlert('Error loading report', 'error');
+    });
+}
+</script>
+
+<style>
+.reports-container {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.report-generator {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    margin-bottom: 2rem;
+}
+
+.generator-header {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #f8f9fa;
+}
+
+.generator-header h3 {
+    margin: 0;
+    color: #333;
+}
+
+.report-form .form-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: #333;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #eee;
+}
+
+.quick-reports {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    margin-bottom: 2rem;
+}
+
+.quick-reports h3 {
+    margin-bottom: 1rem;
+    color: #333;
+}
+
+.quick-report-buttons {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.quick-report-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 1rem;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.quick-report-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+}
+
+.quick-report-btn i {
+    font-size: 1.2rem;
+}
+
+.report-display {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    margin-bottom: 2rem;
+}
+
+.report-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #f8f9fa;
+}
+
+.report-header h3 {
+    margin: 0;
+    color: #333;
+}
+
+.report-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.download-section {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    border: 2px solid #dee2e6;
+}
+
+.download-header {
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+.download-header h4 {
+    color: #333;
+    margin-bottom: 0.5rem;
+    font-size: 1.25rem;
+}
+
+.download-header p {
+    color: #666;
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+.download-buttons {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.download-btn {
+    background: white;
+    border: 2px solid #dee2e6;
+    border-radius: 12px;
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: left;
+}
+
+.download-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    border-color: #4A90E2;
+}
+
+.download-btn.csv-btn:hover {
+    border-color: #28a745;
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+}
+
+.download-btn.pdf-btn:hover {
+    border-color: #dc3545;
+    background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%);
+    color: white;
+}
+
+.download-btn.print-btn:hover {
+    border-color: #007bff;
+    background: linear-gradient(135deg, #007bff 0%, #6610f2 100%);
+    color: white;
+}
+
+.download-icon {
+    font-size: 2rem;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    background: #f8f9fa;
+    position: relative;
+}
+
+.loading-spinner {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f8f9fa;
+    border-radius: 10px;
+}
+
+.loading-spinner i {
+    color: #4A90E2;
+    font-size: 1.5rem;
+}
+
+.csv-btn .download-icon {
+    color: #28a745;
+}
+
+.pdf-btn .download-icon {
+    color: #dc3545;
+}
+
+.print-btn .download-icon {
+    color: #007bff;
+}
+
+.download-info {
+    flex: 1;
+}
+
+.download-info h5 {
+    margin: 0 0 0.25rem 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #333;
+}
+
+.download-info p {
+    margin: 0;
+    font-size: 0.8rem;
+    color: #666;
+}
+
+.download-arrow {
+    font-size: 1.2rem;
+    color: #999;
+    transition: transform 0.3s ease;
+}
+
+.download-btn:hover .download-arrow {
+    transform: translateY(2px);
+}
+
+.report-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.summary-card {
+    background: #f8f9fa;
+    padding: 1.5rem;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.summary-card h4 {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 0.5rem;
+}
+
+.summary-card p {
+    color: #666;
+    margin: 0;
+}
+
+.report-content {
+    margin-top: 2rem;
+}
+
+.chart-container {
+    margin-bottom: 2rem;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 12px;
+}
+
+.report-table h4 {
+    margin-bottom: 1rem;
+    color: #333;
+}
+
+.table-responsive {
+    overflow-x: auto;
+}
+
+.report-table-data {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.report-table-data th {
+    background: #f8f9fa;
+    padding: 1rem;
+    text-align: left;
+    font-weight: 600;
+    color: #333;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.report-table-data td {
+    padding: 1rem;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.report-table-data tr:hover {
+    background-color: #f8f9fa;
+}
+
+.recent-reports {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+}
+
+.recent-reports h3 {
+    margin-bottom: 1rem;
+    color: #333;
+}
+
+.reports-list {
+    display: grid;
+    gap: 1rem;
+}
+
+.report-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    transition: background-color 0.3s ease;
+}
+
+.report-item:hover {
+    background-color: #f8f9fa;
+}
+
+.report-info h4 {
+    margin: 0 0 0.25rem 0;
+    color: #333;
+}
+
+.report-info p {
+    margin: 0;
+    color: #666;
+    font-size: 0.9rem;
+}
+
+@media (max-width: 768px) {
+    .report-form .form-row {
+        grid-template-columns: 1fr;
+    }
+    
+    .quick-report-buttons {
+        grid-template-columns: 1fr;
+    }
+    
+    .report-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    
+    .report-actions {
+        flex-wrap: wrap;
+    }
+    
+    .download-buttons {
+        grid-template-columns: 1fr;
+    }
+    
+    .download-btn {
+        padding: 1rem;
+        gap: 0.75rem;
+    }
+    
+    .download-icon {
+        font-size: 1.5rem;
+        width: 40px;
+        height: 40px;
+    }
+    
+    .download-info h5 {
+        font-size: 0.9rem;
+    }
+    
+    .download-info p {
+        font-size: 0.75rem;
+    }
+    
+    .report-summary {
+        grid-template-columns: 1fr;
+    }
+    
+    .report-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+}
+
+@media print {
+    .top-header,
+    .sidebar,
+    .report-actions,
+    .quick-reports,
+    .recent-reports,
+    .form-actions {
+        display: none !important;
+    }
+    
+    .page-content {
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    
+    .report-display {
+        box-shadow: none !important;
+        border: none !important;
+    }
+}
+</style>
+{% endblock %}

@@ -1,0 +1,564 @@
+{% extends "employee/base.html" %}
+
+{% block title %}Products View - Smart Inventory Management System{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="page-header">
+        <h1><i class="fas fa-box me-2"></i>Products Management</h1>
+        <p>View all products and their stock status</p>
+    </div>
+
+    <!-- Search and Filter Section -->
+    <div class="search-filter-section">
+        <div class="search-bar">
+            <div class="input-group">
+                <span class="input-group-text">
+                    <i class="fas fa-search"></i>
+                </span>
+                <input type="text" class="form-control" placeholder="Search products..." id="searchInput" onkeyup="filterProducts()">
+            </div>
+        </div>
+        
+        <div class="filter-bar">
+            <select class="form-select" id="categoryFilter" onchange="filterProducts()">
+                <option value="">All Categories</option>
+                <option value="electronics">Electronics</option>
+                <option value="furniture">Furniture</option>
+                <option value="stationery">Stationery</option>
+                <option value="clothing">Clothing</option>
+                <option value="food">Food & Beverages</option>
+            </select>
+            
+            <select class="form-select" id="stockFilter" onchange="filterProducts()">
+                <option value="">All Stock Status</option>
+                <option value="in_stock">In Stock</option>
+                <option value="low_stock">Low Stock</option>
+                <option value="out_of_stock">Out of Stock</option>
+            </select>
+            
+            <button class="btn btn-primary" onclick="loadProducts()">
+                <i class="fas fa-sync-alt"></i> Refresh
+            </button>
+            
+            <button class="btn btn-success" onclick="showDownloadModal()">
+                <i class="fas fa-download"></i> Download
+            </button>
+        </div>
+    </div>
+
+    <!-- Products Statistics -->
+    <div class="stats-grid mb-4">
+        <div class="stat-card">
+            <div class="stat-icon bg-primary">
+                <i class="fas fa-boxes"></i>
+            </div>
+            <div class="stat-content">
+                <h3 id="totalProducts">0</h3>
+                <p>Total Products</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon bg-success">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="stat-content">
+                <h3 id="inStockProducts">0</h3>
+                <p>In Stock</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon bg-warning">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <div class="stat-content">
+                <h3 id="lowStockProducts">0</h3>
+                <p>Low Stock</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon bg-danger">
+                <i class="fas fa-times-circle"></i>
+            </div>
+            <div class="stat-content">
+                <h3 id="outOfStockProducts">0</h3>
+                <p>Out of Stock</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Spinner -->
+    <div class="text-center py-4" id="loadingSpinner" style="display: none;">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="mt-2">Loading products...</p>
+    </div>
+
+    <!-- Products Table -->
+    <div class="table-container">
+        <table class="table table-hover" id="productsTable">
+            <thead>
+                <tr>
+                    <th>Sr. No.</th>
+                    <th>Product ID</th>
+                    <th>Product Name</th>
+                    <th>Category</th>
+                    <th>Stock Quantity</th>
+                    <th>Min Stock Level</th>
+                    <th>Price</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="productsTableBody">
+                <!-- Products will be loaded here -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Empty State -->
+    <div class="text-center py-5" id="emptyState" style="display: none;">
+        <i class="fas fa-box-open fa-3x text-muted mb-3"></i>
+        <h4 class="text-muted">No Products Found</h4>
+        <p class="text-muted">There are no products matching your current filters.</p>
+        <button class="btn btn-primary" onclick="loadProducts()">
+            <i class="fas fa-sync-alt me-1"></i>Refresh
+        </button>
+    </div>
+
+    <!-- Product Details Modal -->
+    <div class="modal fade" id="productModal" tabindex="-1" aria-labelledby="productModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="productModalLabel">
+                        <i class="fas fa-box me-2"></i>Product Details
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="productModalBody">
+                    <!-- Product details will be loaded here -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Download Modal -->
+    <div class="modal fade" id="downloadModal" tabindex="-1" aria-labelledby="downloadModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="downloadModalLabel">
+                        <i class="fas fa-download me-2"></i>Download Products Report
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="downloadForm">
+                        <div class="mb-3">
+                            <label for="startDate" class="form-label">Start Date</label>
+                            <input type="date" class="form-control" id="startDate" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="endDate" class="form-label">End Date</label>
+                            <input type="date" class="form-control" id="endDate" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="downloadFormat" class="form-label">Format</label>
+                            <select class="form-select" id="downloadFormat">
+                                <option value="csv">CSV</option>
+                                <option value="pdf">PDF</option>
+                            </select>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-success" onclick="downloadProducts()">
+                        <i class="fas fa-download me-1"></i>Download
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Global variables
+let allProducts = [];
+let filteredProducts = [];
+
+// Initialize page
+document.addEventListener('DOMContentLoaded', function() {
+    loadProducts();
+});
+
+// Load products from API
+async function loadProducts() {
+    showLoading(true);
+    try {
+        const response = await fetch('/api/products');
+        const data = await response.json();
+        allProducts = data.products || [];
+        filteredProducts = [...allProducts];
+        
+        renderProducts();
+        updateStatistics();
+        
+    } catch (error) {
+        console.error('Error loading products:', error);
+        showError('Failed to load products. Please try again.');
+    } finally {
+        showLoading(false);
+    }
+}
+
+// Filter products
+function filterProducts() {
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    const categoryFilter = document.getElementById('categoryFilter').value;
+    const stockFilter = document.getElementById('stockFilter').value;
+    
+    filteredProducts = allProducts.filter(product => {
+        // Search filter - prioritize SKU in Product ID column
+        const matchesSearch = !searchTerm || 
+            product.name.toLowerCase().includes(searchTerm) ||
+            product.category.toLowerCase().includes(searchTerm) ||
+            (product.sku && product.sku.toLowerCase().includes(searchTerm)) ||
+            product.product_id.toLowerCase().includes(searchTerm);
+        
+        // Category filter
+        const matchesCategory = !categoryFilter || product.category === categoryFilter;
+        
+        // Stock filter
+        const matchesStock = !stockFilter || product.stock_status === stockFilter;
+        
+        return matchesSearch && matchesCategory && matchesStock;
+    });
+    
+    renderProducts();
+}
+
+// Render products table
+function renderProducts() {
+    const tbody = document.getElementById('productsTableBody');
+    const emptyState = document.getElementById('emptyState');
+    
+    if (filteredProducts.length === 0) {
+        tbody.innerHTML = '';
+        emptyState.style.display = 'block';
+        return;
+    }
+    
+    emptyState.style.display = 'none';
+    
+    const productsHtml = filteredProducts.map((product, index) => createProductRow(product, index + 1)).join('');
+    tbody.innerHTML = productsHtml;
+}
+
+// Create product row HTML
+function createProductRow(product, serialNumber) {
+    const statusClass = product.stock_status_color || 'secondary';
+    const statusText = product.stock_status ? product.stock_status.replace('_', ' ').toUpperCase() : 'UNKNOWN';
+    
+    // Format serial number with leading zero
+    const formattedSerial = serialNumber.toString().padStart(2, '0');
+    
+    return `
+        <tr>
+            <td><strong>${formattedSerial}</strong></td>
+            <td><span class="badge bg-primary">${product.sku || product.product_id || 'N/A'}</span></td>
+            <td>
+                <strong>${product.name || 'Unknown Product'}</strong>
+                ${product.description ? `<br><small class="text-muted">${product.description}</small>` : ''}
+            </td>
+            <td>${product.category || 'N/A'}</td>
+            <td>
+                <span class="badge bg-${statusClass}">
+                    ${product.stock_quantity || 0}
+                </span>
+            </td>
+            <td>${product.min_stock_level || 10}</td>
+            <td>$${(product.price || 0).toFixed(2)}</td>
+            <td>
+                <span class="badge bg-${statusClass}">
+                    ${statusText}
+                </span>
+            </td>
+            <td>
+                <div class="btn-group" role="group">
+                    <button class="btn btn-sm btn-outline-primary" onclick="viewProduct('${product._id}')" title="View Details">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
+            </td>
+        </tr>
+    `;
+}
+
+// Update statistics
+function updateStatistics() {
+    const total = allProducts.length;
+    const inStock = allProducts.filter(p => p.stock_status === 'in_stock').length;
+    const lowStock = allProducts.filter(p => p.stock_status === 'low_stock').length;
+    const outOfStock = allProducts.filter(p => p.stock_status === 'out_of_stock').length;
+    
+    document.getElementById('totalProducts').textContent = total;
+    document.getElementById('inStockProducts').textContent = inStock;
+    document.getElementById('lowStockProducts').textContent = lowStock;
+    document.getElementById('outOfStockProducts').textContent = outOfStock;
+}
+
+// View product details
+function viewProduct(productId) {
+    const product = allProducts.find(p => p._id === productId);
+    if (product) {
+        const modalBody = document.getElementById('productModalBody');
+        const statusClass = product.stock_status_color || 'secondary';
+        const statusText = product.stock_status ? product.stock_status.replace('_', ' ').toUpperCase() : 'UNKNOWN';
+        
+        modalBody.innerHTML = `
+            <div class="row">
+                <div class="col-md-6">
+                    <h6 class="text-muted">Product ID (SKU)</h6>
+                    <p class="mb-3"><span class="badge bg-primary fs-6">${product.sku || product.product_id || 'N/A'}</span></p>
+                    
+                    <h6 class="text-muted">Product Name</h6>
+                    <p class="mb-3"><strong>${product.name || 'Unknown Product'}</strong></p>
+                    
+                    <h6 class="text-muted">Category</h6>
+                    <p class="mb-3">${product.category || 'N/A'}</p>
+                    
+                    <h6 class="text-muted">Description</h6>
+                    <p class="mb-3">${product.description || 'No description available'}</p>
+                </div>
+                <div class="col-md-6">
+                    <h6 class="text-muted">Stock Quantity</h6>
+                    <p class="mb-3">
+                        <span class="badge bg-${statusClass} fs-6">
+                            ${product.stock_quantity || 0} units
+                        </span>
+                    </p>
+                    
+                    <h6 class="text-muted">Min Stock Level</h6>
+                    <p class="mb-3">${product.min_stock_level || 10} units</p>
+                    
+                    <h6 class="text-muted">Price</h6>
+                    <p class="mb-3"><strong>$${(product.price || 0).toFixed(2)}</strong></p>
+                    
+                    <h6 class="text-muted">Status</h6>
+                    <p class="mb-3">
+                        <span class="badge bg-${statusClass}">
+                            ${statusText}
+                        </span>
+                    </p>
+                </div>
+            </div>
+            
+            ${product.additional_info ? `
+                <hr>
+                <h6 class="text-muted">Additional Information</h6>
+                <p>${product.additional_info}</p>
+            ` : ''}
+        `;
+        
+        // Show the modal
+        const modal = new bootstrap.Modal(document.getElementById('productModal'));
+        modal.show();
+    } else {
+        showError('Product not found');
+    }
+}
+
+// Show/hide loading spinner
+function showLoading(show) {
+    const spinner = document.getElementById('loadingSpinner');
+    spinner.style.display = show ? 'block' : 'none';
+}
+
+// Show success message
+function showSuccess(message) {
+    const toast = document.createElement('div');
+    toast.className = 'toast align-items-center text-white bg-success border-0 position-fixed top-0 end-0 m-3';
+    toast.style.zIndex = '9999';
+    toast.innerHTML = `
+        <div class="d-flex">
+            <div class="toast-body">
+                <i class="fas fa-check-circle me-2"></i>${message}
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+    `;
+    
+    document.body.appendChild(toast);
+    const bsToast = new bootstrap.Toast(toast);
+    bsToast.show();
+    
+    setTimeout(() => {
+        toast.remove();
+    }, 3000);
+}
+
+// Show error message
+function showError(message) {
+    const toast = document.createElement('div');
+    toast.className = 'toast align-items-center text-white bg-danger border-0 position-fixed top-0 end-0 m-3';
+    toast.style.zIndex = '9999';
+    toast.innerHTML = `
+        <div class="d-flex">
+            <div class="toast-body">
+                <i class="fas fa-exclamation-triangle me-2"></i>${message}
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+    `;
+    
+    document.body.appendChild(toast);
+    const bsToast = new bootstrap.Toast(toast);
+    bsToast.show();
+    
+    setTimeout(() => {
+        toast.remove();
+    }, 3000);
+}
+
+// Show download modal
+function showDownloadModal() {
+    // Set default dates (last 30 days)
+    const today = new Date();
+    const thirtyDaysAgo = new Date(today.getTime() - (30 * 24 * 60 * 60 * 1000));
+    
+    document.getElementById('startDate').value = thirtyDaysAgo.toISOString().split('T')[0];
+    document.getElementById('endDate').value = today.toISOString().split('T')[0];
+    
+    // Show the modal
+    const modal = new bootstrap.Modal(document.getElementById('downloadModal'));
+    modal.show();
+}
+
+// Download products based on date range and format
+async function downloadProducts() {
+    const startDate = document.getElementById('startDate').value;
+    const endDate = document.getElementById('endDate').value;
+    const format = document.getElementById('downloadFormat').value;
+
+    if (!startDate || !endDate) {
+        showError('Please select both start and end dates');
+        return;
+    }
+
+    if (new Date(startDate) > new Date(endDate)) {
+        showError('Start date cannot be after end date');
+        return;
+    }
+
+    try {
+        const modal = bootstrap.Modal.getInstance(document.getElementById('downloadModal'));
+        modal.hide();
+
+        const params = new URLSearchParams({
+            start_date: startDate,
+            end_date: endDate,
+            format: format
+        });
+
+        // ✅ KEY FIX
+        window.open(`/api/products/download?${params}`, '_blank');
+
+        showSuccess(`Downloading ${format.toUpperCase()} report...`);
+
+    } catch (error) {
+        console.error(error);
+        showError('Download failed');
+    }
+}
+</script>
+
+<style>
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 10px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.5rem;
+}
+
+.stat-content h3 {
+    margin: 0;
+    font-size: 2rem;
+    font-weight: bold;
+}
+
+.stat-content p {
+    margin: 0;
+    color: #6c757d;
+}
+
+.table-container {
+    background: white;
+    border-radius: 10px;
+    padding: 1rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.table {
+    margin-bottom: 0;
+}
+
+.table th {
+    border-top: none;
+    font-weight: 600;
+    color: #495057;
+}
+
+.btn-group {
+    gap: 0.25rem;
+}
+
+.search-filter-section {
+    background: #f8f9fa;
+    padding: 1.5rem;
+    border-radius: 10px;
+    margin-bottom: 2rem;
+}
+
+.search-bar {
+    margin-bottom: 1rem;
+}
+
+.filter-bar {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+.filter-bar .form-select {
+    flex: 1;
+    max-width: 200px;
+}
+</style>
+{% endblock %}

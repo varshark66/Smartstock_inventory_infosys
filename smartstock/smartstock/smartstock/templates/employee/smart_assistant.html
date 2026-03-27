@@ -1,0 +1,593 @@
+{% extends "employee/base.html" %}
+
+{% block title %}Smart Assistant - Employee Portal{% endblock %}
+
+{% block content %}
+<div class="assistant-container">
+    <div class="page-header">
+        <h1>Smart Assistant</h1>
+        <p>Your AI-powered inventory management assistant</p>
+    </div>
+
+    <div class="assistant-layout">
+        <!-- Chat Interface -->
+        <div class="chat-interface">
+            <div class="chat-header">
+                <div class="assistant-info">
+                    <div class="assistant-avatar">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <div class="assistant-details">
+                        <h3>Inventory Assistant</h3>
+                        <span class="status online">Online</span>
+                    </div>
+                </div>
+                <button class="btn btn-sm btn-outline-secondary" onclick="clearChat()">
+                    <i class="fas fa-trash"></i> Clear
+                </button>
+            </div>
+
+            <div class="chat-messages" id="chatMessages">
+                <div class="message assistant-message">
+                    <div class="message-avatar">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <div class="message-content">
+                        <p>Hello! I'm your Smart Inventory Assistant. I can help you with:</p>
+                        <ul>
+                            <li>Checking current stock levels</li>
+                            <li>Recording sales transactions</li>
+                            <li>Updating inventory stock</li>
+                            <li>Viewing low stock alerts</li>
+                            <li>Product information lookup</li>
+                            <li>Daily task assistance</li>
+                        </ul>
+                        <p>How can I assist you today?</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chat-input">
+                <div class="input-group">
+                    <input type="text" id="messageInput" placeholder="Ask me anything about your inventory..." 
+                           onkeypress="handleKeyPress(event)">
+                    <button class="btn btn-primary" onclick="sendMessage()">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="quick-actions-panel">
+            <h3>Quick Actions</h3>
+            <div class="quick-questions">
+                <button class="question-btn" onclick="askQuestion('What products are low in stock?')">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span>What products are low in stock?</span>
+                </button>
+                <button class="question-btn" onclick="askQuestion('How do I record a sale?')">
+                    <i class="fas fa-shopping-cart"></i>
+                    <span>How do I record a sale?</span>
+                </button>
+                <button class="question-btn" onclick="askQuestion('Show me today\'s tasks')">
+                    <i class="fas fa-tasks"></i>
+                    <span>Show me today's tasks</span>
+                </button>
+                <button class="question-btn" onclick="askQuestion('Check product availability')">
+                    <i class="fas fa-search"></i>
+                    <span>Check product availability</span>
+                </button>
+                <button class="question-btn" onclick="askQuestion('How to update stock?')">
+                    <i class="fas fa-plus-circle"></i>
+                    <span>How to update stock?</span>
+                </button>
+                <button class="question-btn" onclick="askQuestion('View recent alerts')">
+                    <i class="fas fa-bell"></i>
+                    <span>View recent alerts</span>
+                </button>
+            </div>
+
+            <!-- Employee Tips -->
+            <div class="insights-panel">
+                <h3>Quick Tips</h3>
+                <div class="insight-list">
+                    <div class="insight-item">
+                        <i class="fas fa-lightbulb"></i>
+                        <div class="insight-content">
+                            <h4>Daily Checklist</h4>
+                            <p>Check low stock alerts first thing in the morning</p>
+                        </div>
+                    </div>
+                    <div class="insight-item">
+                        <i class="fas fa-chart-line"></i>
+                        <div class="insight-content">
+                            <h4>Sales Entry Tip</h4>
+                            <p>Always verify product quantity before recording sales</p>
+                        </div>
+                    </div>
+                    <div class="insight-item">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <div class="insight-content">
+                            <h4>Stock Update</h4>
+                            <p>Update stock immediately after receiving new inventory</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const responses = {
+    'low stock': 'Based on current inventory, you have several products that are low in stock. You can view the complete list in the Alerts section. Would you like me to guide you there?',
+    'record a sale': 'To record a sale:\n\n1. Go to Sales Entry from the sidebar\n2. Search and select the product\n3. Enter the quantity sold\n4. Verify the details and submit\n\nWould you like me to take you to the Sales Entry page?',
+    'today\'s tasks': "Today's recommended tasks:\n\n• Check low stock alerts\n• Record any pending sales\n• Update inventory if new stock arrived\n• Review yesterday's transactions\n\nI can help you with any of these tasks!",
+    'product availability': 'I can help you check product availability. You can:\n\n• Browse all products in the Products section\n• Use the search bar to find specific items\n• Check stock levels and alerts\n\nWhat product are you looking for?',
+    'update stock': 'To update stock:\n\n1. Go to Stock Update from the sidebar\n2. Search for the product\n3. Enter the new quantity\n4. Add notes if needed\n5. Submit the update\n\nNeed help with a specific product?',
+    'recent alerts': 'You can view recent alerts in the Alerts section. This will show you:\n\n• Low stock warnings\n• Out of stock items\n• Recent inventory changes\n\nWould you like me to open the Alerts page?',
+    'help': 'I can help you with:\n\n• Stock level inquiries\n• Sales recording guidance\n• Stock update procedures\n• Product information\n• Alert management\n• Daily task assistance\n\nJust ask me anything in natural language!',
+    'hello': 'Hello! How can I help you manage your inventory today?',
+    'hi': 'Hi there! What inventory task can I assist you with?',
+    'thanks': 'You\'re welcome! Is there anything else I can help you with?',
+    'bye': 'Goodbye! Feel free to come back anytime you need inventory assistance.',
+    'sale': 'I can help you with sales! Go to Sales Entry to record new transactions, or check Transaction History to view past sales.',
+    'stock': 'For stock management, use the Stock Update page to add inventory, or Products page to view current stock levels.',
+    'alert': 'Check the Alerts page for all low stock and inventory notifications. I can help you prioritize which items need attention first.'
+};
+
+function sendMessage() {
+    const input = document.getElementById('messageInput');
+    const message = input.value.trim();
+    
+    if (!message) return;
+    
+    // Add user message
+    addMessage(message, 'user');
+    input.value = '';
+    
+    // Show typing indicator
+    showTypingIndicator();
+    
+    // Simulate AI response
+    setTimeout(() => {
+        removeTypingIndicator();
+        const response = generateResponse(message);
+        addMessage(response, 'assistant');
+    }, 1000 + Math.random() * 1000);
+}
+
+function askQuestion(question) {
+    document.getElementById('messageInput').value = question;
+    sendMessage();
+}
+
+function generateResponse(message) {
+    const lowerMessage = message.toLowerCase();
+    
+    // Check for keywords in the message
+    for (const [keyword, response] of Object.entries(responses)) {
+        if (lowerMessage.includes(keyword)) {
+            return response;
+        }
+    }
+    
+    // Default responses
+    const defaultResponses = [
+        'I understand you\'re asking about "' + message + '". Let me help you with that. Could you provide more specific details?',
+        'That\'s an interesting question about "' + message + '". I can help you with inventory-related tasks. Try asking about stock levels, sales recording, or alerts.',
+        'I\'m here to help with inventory management. For "' + message + '", you might want to check the relevant sections in your dashboard.',
+        'I can assist with various inventory tasks. For "' + message + '", would you like me to guide you through the process?'
+    ];
+    
+    return defaultResponses[Math.floor(Math.random() * defaultResponses.length)];
+}
+
+function addMessage(text, sender) {
+    const messagesContainer = document.getElementById('chatMessages');
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message ${sender}-message`;
+    
+    const avatar = sender === 'assistant' 
+        ? '<i class="fas fa-robot"></i>' 
+        : '<i class="fas fa-user"></i>';
+    
+    const formattedText = text.replace(/\n/g, '<br>');
+    
+    messageDiv.innerHTML = `
+        <div class="message-avatar">
+            ${avatar}
+        </div>
+        <div class="message-content">
+            <p>${formattedText}</p>
+            <span class="message-time">${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+        </div>
+    `;
+    
+    messagesContainer.appendChild(messageDiv);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+}
+
+function showTypingIndicator() {
+    const messagesContainer = document.getElementById('chatMessages');
+    const typingDiv = document.createElement('div');
+    typingDiv.className = 'message assistant-message typing-indicator';
+    typingDiv.id = 'typingIndicator';
+    
+    typingDiv.innerHTML = `
+        <div class="message-avatar">
+            <i class="fas fa-robot"></i>
+        </div>
+        <div class="message-content">
+            <div class="typing-dots">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+    `;
+    
+    messagesContainer.appendChild(typingDiv);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+}
+
+function removeTypingIndicator() {
+    const indicator = document.getElementById('typingIndicator');
+    if (indicator) {
+        indicator.remove();
+    }
+}
+
+function clearChat() {
+    if (confirm('Are you sure you want to clear the chat history?')) {
+        const messagesContainer = document.getElementById('chatMessages');
+        messagesContainer.innerHTML = `
+            <div class="message assistant-message">
+                <div class="message-avatar">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <div class="message-content">
+                    <p>Chat history cleared. How can I help you today?</p>
+                </div>
+            </div>
+        `;
+    }
+}
+
+function handleKeyPress(event) {
+    if (event.key === 'Enter') {
+        sendMessage();
+    }
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+    // Focus on input
+    document.getElementById('messageInput').focus();
+});
+</script>
+
+<style>
+.assistant-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    height: calc(100vh - 120px);
+}
+
+.assistant-layout {
+    display: grid;
+    grid-template-columns: 1fr 350px;
+    gap: 2rem;
+    height: 100%;
+}
+
+.chat-interface {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.chat-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.assistant-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.assistant-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.5rem;
+}
+
+.assistant-details h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    color: #333;
+}
+
+.status.online {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    background-color: #27ae60;
+    border-radius: 50%;
+    margin-left: 0.5rem;
+}
+
+.status.online::before {
+    content: "Online";
+    color: #27ae60;
+    font-size: 0.8rem;
+    margin-left: 1rem;
+}
+
+.chat-messages {
+    flex: 1;
+    padding: 1.5rem;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.message {
+    display: flex;
+    gap: 1rem;
+    max-width: 80%;
+}
+
+.user-message {
+    align-self: flex-end;
+    flex-direction: row-reverse;
+}
+
+.assistant-message {
+    align-self: flex-start;
+}
+
+.message-avatar {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+}
+
+.assistant-message .message-avatar {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+}
+
+.user-message .message-avatar {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+}
+
+.message-content {
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: 12px;
+    position: relative;
+}
+
+.user-message .message-content {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+}
+
+.message-content p {
+    margin: 0;
+    line-height: 1.5;
+}
+
+.message-content ul {
+    margin: 0.5rem 0;
+    padding-left: 1.5rem;
+}
+
+.message-time {
+    font-size: 0.7rem;
+    opacity: 0.7;
+    margin-top: 0.5rem;
+    display: block;
+}
+
+.typing-indicator .message-content {
+    background: #f8f9fa;
+    padding: 1rem;
+}
+
+.typing-dots {
+    display: flex;
+    gap: 0.25rem;
+}
+
+.typing-dots span {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: #666;
+    animation: typing 1.4s infinite ease-in-out;
+}
+
+.typing-dots span:nth-child(1) { animation-delay: -0.32s; }
+.typing-dots span:nth-child(2) { animation-delay: -0.16s; }
+
+@keyframes typing {
+    0%, 80%, 100% {
+        transform: scale(0.8);
+        opacity: 0.5;
+    }
+    40% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.chat-input {
+    padding: 1.5rem;
+    border-top: 1px solid #eee;
+}
+
+.input-group {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.input-group input {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    border: 1px solid #ddd;
+    border-radius: 25px;
+    outline: none;
+    font-size: 0.9rem;
+}
+
+.input-group input:focus {
+    border-color: #28a745;
+}
+
+.input-group button {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    border: none;
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 0.3s ease;
+}
+
+.input-group button:hover {
+    transform: scale(1.05);
+}
+
+.quick-actions-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.quick-actions-panel h3 {
+    margin: 0;
+    color: #333;
+    font-size: 1.1rem;
+}
+
+.quick-questions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.question-btn {
+    background: white;
+    border: 1px solid #eee;
+    padding: 1rem;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: left;
+    font-size: 0.9rem;
+}
+
+.question-btn:hover {
+    background: #f8f9fa;
+    border-color: #28a745;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.question-btn i {
+    color: #28a745;
+    width: 20px;
+}
+
+.insights-panel {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+}
+
+.insight-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.insight-item {
+    display: flex;
+    gap: 1rem;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border-left: 3px solid #28a745;
+}
+
+.insight-item i {
+    color: #28a745;
+    margin-top: 0.25rem;
+}
+
+.insight-content h4 {
+    margin: 0 0 0.25rem 0;
+    font-size: 0.9rem;
+    color: #333;
+}
+
+.insight-content p {
+    margin: 0;
+    font-size: 0.8rem;
+    color: #666;
+    line-height: 1.4;
+}
+
+@media (max-width: 768px) {
+    .assistant-layout {
+        grid-template-columns: 1fr;
+        height: auto;
+    }
+    
+    .chat-interface {
+        height: 60vh;
+    }
+    
+    .quick-actions-panel {
+        order: -1;
+    }
+    
+    .message {
+        max-width: 90%;
+    }
+}
+</style>
+{% endblock %}

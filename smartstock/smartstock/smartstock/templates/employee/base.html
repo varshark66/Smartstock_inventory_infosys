@@ -1,0 +1,1090 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Smart Inventory Management System - Employee{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/dashboard.css') }}" rel="stylesheet">
+    <style>
+        /* Employee-specific color overrides - exact same structure as admin */
+        .top-header {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%) !important;
+        }
+        
+        .sidebar {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%) !important;
+        }
+        
+        /* Employee User Info Section - White text for dark background */
+        .user-info-section {
+            background: rgba(226, 131, 131, 0.1) !important;
+            border: 1px solid rgba(255, 255, 255, 0.2) !important;
+        }
+        
+        .user-name {
+            color: white !important;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3) !important;
+        }
+        
+        .user-email {
+            color: rgba(255, 255, 255, 0.8) !important;
+        }
+        
+        /* Update nav items for dark sidebar */
+        .nav-item {
+            color: rgba(255, 255, 255, 0.9) !important;
+        }
+        
+        .nav-item:hover {
+            background-color: rgba(255, 255, 255, 0.1) !important;
+            color: white !important;
+        }
+        
+        .nav-item.active {
+            background-color: #d4edda !important;
+            color: #155724 !important;
+            border-left-color: #28a745 !important;
+        }
+        
+        .page-header h1 {
+            color: #28a745 !important;
+        }
+        
+        .stat-icon.blue {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%) !important;
+        }
+        
+        .stat-icon.green {
+            background: linear-gradient(135deg, #20c997 0%, #17a2b8 100%) !important;
+        }
+        
+        .stat-icon.orange {
+            background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%) !important;
+        }
+        
+        .stat-icon.purple {
+            background: linear-gradient(135deg, #6f42c1 0%, #e83e8c 100%) !important;
+        }
+        
+        .btn-primary {
+            background: #28a745 !important;
+            border-color: #28a745 !important;
+        }
+        
+        .btn-primary:hover {
+            background: #218838 !important;
+            border-color: #1e7e34 !important;
+        }
+        
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .status-badge.in-stock {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status-badge.low-stock {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .status-badge.out-stock {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .search-filter-section {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            margin-bottom: 1.5rem;
+        }
+        
+        .search-bar {
+            margin-bottom: 1rem;
+        }
+        
+        .filter-bar {
+            display: flex;
+            gap: 1rem;
+            align-items: end;
+        }
+        
+        .filter-bar .form-select {
+            min-width: 200px;
+        }
+        
+        .table-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+        
+        .table {
+            margin-bottom: 0;
+        }
+        
+        .table th {
+            background: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
+            font-weight: 600;
+            color: #495057;
+        }
+        
+        .action-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .action-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            text-decoration: none;
+            color: inherit;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+        
+        .action-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            color: inherit;
+            text-decoration: none;
+        }
+        
+        .action-icon {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .action-card h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+        
+        .action-card p {
+            color: #666;
+            font-size: 0.9rem;
+            margin: 0;
+        }
+        
+        .recent-alerts {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        }
+        
+        .recent-alerts h2 {
+            font-size: 1.3rem;
+            color: #333;
+            margin-bottom: 1.5rem;
+        }
+        
+        .alert-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .alert-item {
+            display: flex;
+            align-items: start;
+            gap: 1rem;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #28a745;
+        }
+        
+        .alert-item.warning {
+            border-left-color: #ffc107;
+        }
+        
+        .alert-item.info {
+            border-left-color: #17a2b8;
+        }
+        
+        .alert-item.success {
+            border-left-color: #28a745;
+        }
+        
+        .alert-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            flex-shrink: 0;
+        }
+        
+        .alert-content h4 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 0.25rem;
+        }
+        
+        .alert-content p {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 0.25rem;
+        }
+        
+        .alert-content small {
+            font-size: 0.8rem;
+            color: #999;
+        }
+        
+        .quick-actions {
+            margin-bottom: 2rem;
+        }
+        
+        .quick-actions h2 {
+            font-size: 1.3rem;
+            color: #333;
+            margin-bottom: 1.5rem;
+        }
+        
+        /* Notification Dropdown Styles */
+        .notification-icon {
+            position: relative;
+            cursor: pointer;
+            padding: 8px 12px;
+            border-radius: 8px;
+            transition: background-color 0.3s ease;
+        }
+        
+        .notification-icon:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        .notification-icon i {
+            font-size: 1.2rem;
+            color: white;
+        }
+        
+        .notification-icon .badge {
+            position: absolute;
+            top: 4px;
+            right: 8px;
+            background: #dc3545;
+            color: white;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            font-size: 0.7rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            min-width: 18px;
+            padding: 0;
+        }
+        
+        .notification-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+            width: 360px;
+            max-height: 480px;
+            display: none;
+            z-index: 1000;
+            overflow: hidden;
+            animation: slideDown 0.3s ease-out;
+        }
+        
+        .notification-dropdown.show {
+            display: block;
+        }
+        
+        .notification-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px;
+            border-bottom: 1px solid #e9ecef;
+            background: #f8f9fa;
+        }
+        
+        .notification-header h5 {
+            margin: 0;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .clear-all-btn {
+            background: none;
+            border: none;
+            color: #dc3545;
+            font-size: 0.8rem;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 4px;
+            transition: background-color 0.3s ease;
+        }
+        
+        .clear-all-btn:hover {
+            background-color: #f8d7da;
+        }
+        
+        .notification-list {
+            max-height: 320px;
+            overflow-y: auto;
+        }
+        
+        .notification-item {
+            padding: 12px 20px;
+            border-bottom: 1px solid #f1f3f4;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            position: relative;
+        }
+        
+        .notification-item:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .notification-item.unread {
+            background-color: #e8f5e8;
+        }
+        
+        .notification-item.unread::before {
+            content: '';
+            position: absolute;
+            left: 4px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 6px;
+            height: 6px;
+            background: #28a745;
+            border-radius: 50%;
+        }
+        
+        .notification-content {
+            flex: 1;
+        }
+        
+        .notification-title {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: #333;
+            margin-bottom: 4px;
+        }
+        
+        .notification-message {
+            font-size: 0.8rem;
+            color: #666;
+            margin-bottom: 4px;
+            line-height: 1.3;
+        }
+        
+        .notification-time {
+            font-size: 0.75rem;
+            color: #999;
+        }
+        
+        .no-notifications {
+            text-align: center;
+            padding: 40px 20px;
+            color: #999;
+        }
+        
+        .no-notifications i {
+            font-size: 2rem;
+            margin-bottom: 12px;
+            opacity: 0.5;
+        }
+        
+        .no-notifications p {
+            margin: 0;
+            font-size: 0.9rem;
+        }
+        
+        .notification-footer {
+            padding: 12px 20px;
+            border-top: 1px solid #e9ecef;
+            background: #f8f9fa;
+            text-align: center;
+        }
+        
+        .notification-footer a {
+            color: #28a745;
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        
+        .notification-footer a:hover {
+            text-decoration: underline;
+        }
+        
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.1);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+        
+        .notification-icon.pulse .badge {
+            animation: pulse 2s infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="top-header">
+            <div class="header-left">
+                <i class="fas fa-bars menu-toggle"></i>
+                <div class="logo">
+                    <i class="fas fa-boxes"></i>
+                    <span>Smart Inventory - Employee</span>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="digital-clock" id="digitalClock">
+                    <div class="clock-time" id="clockTime">00:00:00 PM</div>
+                    <div class="clock-date" id="clockDate">Loading...</div>
+                </div>
+                <div class="notification-icon" id="notificationIcon">
+                    <i class="fas fa-bell"></i>
+                    <span class="badge" id="notificationBadge">0</span>
+                </div>
+                
+                <!-- Notification Dropdown -->
+                <div class="notification-dropdown" id="notificationDropdown">
+                    <div class="notification-header">
+                        <h5>Notifications</h5>
+                        <button class="clear-all-btn" id="clearAllBtn">Clear All</button>
+                    </div>
+                    <div class="notification-list" id="notificationList">
+                        <div class="no-notifications">
+                            <i class="fas fa-bell-slash"></i>
+                            <p>No new notifications</p>
+                        </div>
+                    </div>
+                    <div class="notification-footer">
+                        <a href="/employee/alerts-view">View All Alerts</a>
+                    </div>
+                </div>
+                <div class="user-dropdown">
+                    <i class="fas fa-user-circle"></i>
+                    <span id="headerUserName">Employee</span>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                <button class="logout-btn" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i>
+                </button>
+            </div>
+        </header>
+
+        <div class="main-content">
+            <!-- Sidebar -->
+            <aside class="sidebar">
+                <!-- User Information Section -->
+                <div class="user-info-section">
+                    <div class="user-details">
+                        <h4 class="user-name" id="sidebarUserName">Guest User</h4>
+                        <p class="user-email" id="sidebarUserEmail">guest@smartstock.com</p>
+                    </div>
+                </div>
+                
+                <nav class="sidebar-nav">
+                    <a href="/employee-dashboard" class="nav-item {% if request.endpoint == 'employee_dashboard' %}active{% endif %}">
+                        <i class="fas fa-tachometer-alt"></i>
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="/employee/products-view" class="nav-item {% if request.endpoint == 'employee_products_view' %}active{% endif %}">
+                        <i class="fas fa-box"></i>
+                        <span>Products</span>
+                    </a>
+                    <a href="/employee/stock-update" class="nav-item {% if request.endpoint == 'employee_stock_update' %}active{% endif %}">
+                        <i class="fas fa-plus-circle"></i>
+                        <span>Stock Update</span>
+                    </a>
+                    <a href="/employee/sales-entry" class="nav-item {% if request.endpoint == 'employee_sales_entry' %}active{% endif %}">
+                        <i class="fas fa-shopping-cart"></i>
+                        <span>Sales Entry</span>
+                    </a>
+                    <a href="/employee/alerts-view" class="nav-item {% if request.endpoint == 'employee_alerts_view' %}active{% endif %}">
+                        <i class="fas fa-bell"></i>
+                        <span>Alerts</span>
+                    </a>
+                    <a href="/employee/transaction-history" class="nav-item {% if request.endpoint == 'employee_transaction_history' %}active{% endif %}">
+                        <i class="fas fa-history"></i>
+                        <span>Transaction History</span>
+                    </a>
+                    <a href="/employee/smart-assistant" class="nav-item {% if request.endpoint == 'employee_smart_assistant' %}active{% endif %}">
+                        <i class="fas fa-robot"></i>
+                        <span>Smart Assistant</span>
+                    </a>
+                    <a href="/employee-profile" class="nav-item {% if request.endpoint == 'employee_profile' %}active{% endif %}">
+                        <i class="fas fa-user"></i>
+                        <span>Profile</span>
+                    </a>
+                </nav>
+            </aside>
+
+            <!-- Main Content -->
+            <main class="page-content">
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+    <script>
+        // Make logout function globally accessible
+        function logout() {
+            showLogoutDialog();
+        }
+        
+        // Perform actual logout
+        function performLogout() {
+            console.log('Performing logout...');
+            const btn = document.getElementById('confirmLogoutBtn');
+            if (btn) {
+                btn.innerHTML = 'Logging out...';
+                btn.disabled = true;
+            }
+            
+            setTimeout(() => {
+                console.log('Redirecting to login...');
+                localStorage.clear();
+                window.location.href = '/login';
+            }, 1000);
+        }
+        
+        // Simple, clean, professional logout dialog
+        function showLogoutDialog() {
+            // Create light dark blur overlay
+            const overlay = document.createElement('div');
+            overlay.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.4);
+                backdrop-filter: blur(4px);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 10000;
+                animation: fadeIn 0.3s ease-out;
+            `;
+
+            // Create medium size dialog box
+            const dialog = document.createElement('div');
+            dialog.style.cssText = `
+                background: white;
+                border-radius: 12px;
+                padding: 32px;
+                width: 480px;
+                max-width: 90vw;
+                box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+                text-align: center;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                animation: slideUp 0.4s ease-out;
+            `;
+
+            dialog.innerHTML = `
+                <!-- Warning Icon -->
+                <div style="
+                    width: 48px;
+                    height: 48px;
+                    margin: 0 auto 20px;
+                    background: linear-gradient(135deg, #ff6b6b, #dc3545);
+                    border-radius: 50%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+                ">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" style="color: white;">
+                        <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M16 17l5-5-5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M21 12H9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+
+                <!-- Title -->
+                <h3 style="
+                    color: #1a202c;
+                    margin: 0 0 12px 0;
+                    font-size: 20px;
+                    font-weight: 600;
+                    line-height: 1.4;
+                ">Confirm Logout</h3>
+
+                <!-- Message -->
+                <p style="
+                    color: #4a5568;
+                    margin: 0 0 28px 0;
+                    font-size: 16px;
+                    line-height: 1.5;
+                ">Are you sure you want to log out of the system?</p>
+
+                <!-- Buttons -->
+                <div style="
+                    display: flex;
+                    gap: 12px;
+                    justify-content: center;
+                ">
+                    <button id="cancelBtn" style="
+                        padding: 14px 32px;
+                        border: 2px solid #e2e8f0;
+                        background: white;
+                        color: #6c757d;
+                        border-radius: 8px;
+                        font-size: 16px;
+                        font-weight: 500;
+                        cursor: pointer;
+                        transition: all 0.3s ease;
+                        min-width: 100px;
+                        outline: none;
+                    ">Cancel</button>
+
+                    <button id="confirmLogoutBtn" onclick="console.log('Direct click!'); performLogout();" style="
+                        padding: 14px 32px;
+                        border: none;
+                        background: linear-gradient(135deg, #dc3545, #c82333);
+                        color: white;
+                        border-radius: 8px;
+                        font-size: 16px;
+                        font-weight: 500;
+                        cursor: pointer;
+                        transition: all 0.3s ease;
+                        min-width: 100px;
+                        box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+                        outline: none;
+                    ">Logout</button>
+                </div>
+            `;
+
+            // Add smooth animations and hover effects
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes fadeIn {
+                    from { opacity: 0; }
+                    to { opacity: 1; }
+                }
+                
+                @keyframes slideUp {
+                    from { 
+                        opacity: 0;
+                        transform: translateY(20px) scale(0.95);
+                    }
+                    to { 
+                        opacity: 1;
+                        transform: translateY(0) scale(1);
+                    }
+                }
+                
+                #cancelBtn:hover {
+                    background: #f8f9fa;
+                    border-color: #dee2e6;
+                    transform: translateY(-1px);
+                }
+                
+                #logoutBtn:hover {
+                    background: linear-gradient(135deg, #c82333, #a02622);
+                    transform: translateY(-1px);
+                    box-shadow: 0 6px 16px rgba(220, 53, 69, 0.4);
+                }
+                
+                #cancelBtn:active, #logoutBtn:active {
+                    transform: translateY(0);
+                }
+            `;
+            document.head.appendChild(style);
+
+            // Add to page
+            overlay.appendChild(dialog);
+            document.body.appendChild(overlay);
+
+            // Button event handlers
+            document.getElementById('cancelBtn').addEventListener('click', function() {
+                console.log('Cancel button clicked');
+                overlay.style.animation = 'fadeIn 0.3s ease-out reverse';
+                setTimeout(() => {
+                    document.body.removeChild(overlay);
+                    document.head.removeChild(style);
+                }, 300);
+            });
+
+            const confirmLogoutBtn = document.getElementById('confirmLogoutBtn');
+            console.log('Confirm logout button found:', confirmLogoutBtn);
+            
+            if (confirmLogoutBtn) {
+                confirmLogoutBtn.addEventListener('click', function() {
+                    console.log('Confirm logout button clicked!');
+                    // Add loading state
+                    this.innerHTML = 'Logging out...';
+                    this.disabled = true;
+                    
+                    setTimeout(() => {
+                        console.log('Redirecting to login...');
+                        localStorage.clear();
+                        window.location.href = '/login';
+                    }, 1000);
+                });
+            } else {
+                console.error('Confirm logout button not found!');
+            }
+
+            // Close on overlay click
+            overlay.addEventListener('click', function(e) {
+                if (e.target === overlay) {
+                    overlay.style.animation = 'fadeIn 0.3s ease-out reverse';
+                    setTimeout(() => {
+                        document.body.removeChild(overlay);
+                        document.head.removeChild(style);
+                    }, 300);
+                }
+            });
+
+            // Close on Escape key
+            const handleEscape = function(e) {
+                if (e.key === 'Escape') {
+                    overlay.style.animation = 'fadeIn 0.3s ease-out reverse';
+                    setTimeout(() => {
+                        document.body.removeChild(overlay);
+                        document.head.removeChild(style);
+                    }, 300);
+                    document.removeEventListener('keydown', handleEscape);
+                }
+            };
+            document.addEventListener('keydown', handleEscape);
+        }
+        
+        // Wait for DOM to be fully loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded, initializing systems...');
+            
+            // Load user data from sessionStorage
+            loadUserData();
+            
+            // Start digital clock
+            console.log('Starting digital clock...');
+            updateDigitalClock();
+            setInterval(updateDigitalClock, 1000);
+            
+            // Initialize notification system
+            console.log('Initializing notification system...');
+            initNotifications();
+            
+            // Toggle sidebar
+            const menuToggle = document.querySelector('.menu-toggle');
+            if (menuToggle) {
+                menuToggle.addEventListener('click', function() {
+                    document.querySelector('.sidebar').classList.toggle('collapsed');
+                    document.querySelector('.page-content').classList.toggle('expanded');
+                });
+            } else {
+                console.warn('Menu toggle not found');
+            }
+            
+            console.log('All systems initialized');
+        });
+        
+        // Cleanup notification interval when page unloads
+        window.addEventListener('beforeunload', function() {
+            if (notificationInterval) {
+                clearInterval(notificationInterval);
+            }
+        });
+        
+        // Digital Clock Function
+        function updateDigitalClock() {
+            try {
+                const now = new Date();
+                
+                // Format time in 12-hour format
+                let hours = now.getHours();
+                const minutes = String(now.getMinutes()).padStart(2, '0');
+                const seconds = String(now.getSeconds()).padStart(2, '0');
+                const ampm = hours >= 12 ? 'PM' : 'AM';
+                hours = hours % 12;
+                hours = hours ? hours : 12; // 0 should be 12
+                const hoursStr = String(hours).padStart(2, '0');
+                const timeString = `${hoursStr}:${minutes}:${seconds} ${ampm}`;
+                
+                // Format date without day
+                const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+                
+                const monthName = months[now.getMonth()];
+                const date = now.getDate();
+                const year = now.getFullYear();
+                
+                const dateString = `${monthName} ${date}, ${year}`;
+                
+                // Update clock display
+                const clockTime = document.getElementById('clockTime');
+                const clockDate = document.getElementById('clockDate');
+                
+                if (clockTime) {
+                    clockTime.textContent = timeString;
+                } else {
+                    console.warn('clockTime element not found');
+                }
+                
+                if (clockDate) {
+                    clockDate.textContent = dateString;
+                } else {
+                    console.warn('clockDate element not found');
+                }
+            } catch (error) {
+                console.error('Error updating digital clock:', error);
+            }
+        }
+        
+        // Load User Data Function
+        function loadUserData() {
+            const userName = sessionStorage.getItem('user_name') || 'Guest User';
+            const userEmail = sessionStorage.getItem('user_email') || 'guest@smartstock.com';
+            
+            // Update sidebar user info
+            const sidebarUserName = document.getElementById('sidebarUserName');
+            const sidebarUserEmail = document.getElementById('sidebarUserEmail');
+            
+            if (sidebarUserName) sidebarUserName.textContent = userName;
+            if (sidebarUserEmail) sidebarUserEmail.textContent = userEmail;
+            
+            // Update header user info
+            const headerUserName = document.getElementById('headerUserName');
+            if (headerUserName) headerUserName.textContent = userName.split(' ')[0] || userName;
+        }
+
+        // Notification System
+        let notificationData = [];
+        let unreadCount = 0;
+        let notificationInterval = null;
+
+        // Initialize notification system
+        function initNotifications() {
+            console.log('Initializing notification system...');
+            
+            try {
+                loadNotifications();
+                
+                // Refresh notifications every 30 seconds
+                notificationInterval = setInterval(loadNotifications, 30000);
+                console.log('Notification interval set');
+                
+                // Setup event listeners
+                setupNotificationListeners();
+                console.log('Notification listeners setup complete');
+            } catch (error) {
+                console.error('Error initializing notification system:', error);
+            }
+        }
+
+        // Load notifications from server
+        async function loadNotifications() {
+            try {
+                console.log('Loading notifications...');
+                const response = await fetch('/api/notifications');
+                if (response.ok) {
+                    const data = await response.json();
+                    notificationData = data.notifications || [];
+                    unreadCount = data.unread_count || 0;
+                    console.log('Notifications loaded:', notificationData.length, 'unread:', unreadCount);
+                    updateNotificationUI();
+                } else {
+                    console.error('Failed to load notifications, status:', response.status);
+                }
+            } catch (error) {
+                console.error('Error loading notifications:', error);
+            }
+        }
+
+        // Update notification UI
+        function updateNotificationUI() {
+            const badge = document.getElementById('notificationBadge');
+            const notificationList = document.getElementById('notificationList');
+            
+            // Update badge count
+            if (badge) {
+                badge.textContent = unreadCount;
+                badge.style.display = unreadCount > 0 ? 'flex' : 'none';
+                
+                // Add pulse animation for new notifications
+                const notificationIcon = document.getElementById('notificationIcon');
+                if (unreadCount > 0 && !notificationIcon.classList.contains('pulse')) {
+                    notificationIcon.classList.add('pulse');
+                } else if (unreadCount === 0) {
+                    notificationIcon.classList.remove('pulse');
+                }
+            }
+            
+            // Update notification list
+            if (notificationList) {
+                if (notificationData.length === 0) {
+                    notificationList.innerHTML = `
+                        <div class="no-notifications">
+                            <i class="fas fa-bell-slash"></i>
+                            <p>No new notifications</p>
+                        </div>
+                    `;
+                } else {
+                    notificationList.innerHTML = notificationData.map(notification => `
+                        <div class="notification-item ${!notification.read ? 'unread' : ''}" 
+                             data-notification-id="${notification.id}">
+                            <div class="notification-content">
+                                <div class="notification-title">${notification.title}</div>
+                                <div class="notification-message">${notification.message}</div>
+                                <div class="notification-time">${formatTime(notification.created_at)}</div>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            }
+        }
+
+        // Format time for notifications
+        function formatTime(timestamp) {
+            const now = new Date();
+            const time = new Date(timestamp);
+            const diffMs = now - time;
+            const diffMins = Math.floor(diffMs / 60000);
+            const diffHours = Math.floor(diffMs / 3600000);
+            const diffDays = Math.floor(diffMs / 86400000);
+            
+            if (diffMins < 1) {
+                return 'Just now';
+            } else if (diffMins < 60) {
+                return `${diffMins} minute${diffMins !== 1 ? 's' : ''} ago`;
+            } else if (diffHours < 24) {
+                return `${diffHours} hour${diffHours !== 1 ? 's' : ''} ago`;
+            } else if (diffDays < 7) {
+                return `${diffDays} day${diffDays !== 1 ? 's' : ''} ago`;
+            } else {
+                return time.toLocaleDateString();
+            }
+        }
+
+        // Setup notification event listeners
+        function setupNotificationListeners() {
+            const notificationIcon = document.getElementById('notificationIcon');
+            const notificationDropdown = document.getElementById('notificationDropdown');
+            const clearAllBtn = document.getElementById('clearAllBtn');
+            
+            // Toggle dropdown
+            if (notificationIcon) {
+                notificationIcon.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const isShown = notificationDropdown.classList.contains('show');
+                    
+                    // Close all other dropdowns
+                    document.querySelectorAll('.notification-dropdown.show').forEach(dropdown => {
+                        dropdown.classList.remove('show');
+                    });
+                    
+                    if (!isShown) {
+                        notificationDropdown.classList.add('show');
+                    }
+                });
+            }
+            
+            // Clear all notifications
+            if (clearAllBtn) {
+                clearAllBtn.addEventListener('click', async function(e) {
+                    e.stopPropagation();
+                    try {
+                        const response = await fetch('/api/notifications/clear', {
+                            method: 'POST'
+                        });
+                        if (response.ok) {
+                            notificationData = [];
+                            unreadCount = 0;
+                            updateNotificationUI();
+                        }
+                    } catch (error) {
+                        console.error('Error clearing notifications:', error);
+                    }
+                });
+            }
+            
+            // Mark notification as read when clicked
+            document.addEventListener('click', async function(e) {
+                const notificationItem = e.target.closest('.notification-item');
+                if (notificationItem) {
+                    const notificationId = notificationItem.dataset.notificationId;
+                    if (notificationId && notificationItem.classList.contains('unread')) {
+                        try {
+                            const response = await fetch(`/api/notifications/${notificationId}/read`, {
+                                method: 'POST'
+                            });
+                            if (response.ok) {
+                                notificationItem.classList.remove('unread');
+                                unreadCount = Math.max(0, unreadCount - 1);
+                                updateNotificationUI();
+                            }
+                        } catch (error) {
+                            console.error('Error marking notification as read:', error);
+                        }
+                    }
+                }
+            });
+            
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!notificationIcon.contains(e.target) && !notificationDropdown.contains(e.target)) {
+                    notificationDropdown.classList.remove('show');
+                }
+            });
+        }
+    </script>
+</body>
+</html>

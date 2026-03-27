@@ -1,0 +1,1224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Owner Dashboard - SmartStock</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #1a202c;
+        }
+
+        .navbar {
+            background: white;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 20px;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+        }
+
+        .logout-btn {
+            padding: 8px 16px;
+            background: #e53e3e;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .logout-btn:hover {
+            background: #c53030;
+            transform: translateY(-1px);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .dashboard-header {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .dashboard-title {
+            font-size: 48px;
+            font-weight: 700;
+            color: #1a202c;
+            margin-bottom: 0.5rem;
+            line-height: 1.2;
+        }
+
+        .dashboard-subtitle {
+            color: #718096;
+            font-size: 20px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .stat-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            margin-bottom: 1rem;
+        }
+
+        .stat-value {
+            font-size: 40px;
+            font-weight: 700;
+            color: #1a202c;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            font-size: 18px;
+            color: #718096;
+            font-weight: 600;
+        }
+
+        .users-section {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .section-title {
+            font-size: 32px;
+            font-weight: 600;
+            color: #1a202c;
+            margin-bottom: 1.5rem;
+        }
+
+        .users-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .users-table th {
+            background: #f7fafc;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #4a5568;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .users-table td {
+            padding: 12px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .users-table tr:hover {
+            background: #f7fafc;
+        }
+
+        .role-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .role-badge.admin {
+            background: #fed7d7;
+            color: #c53030;
+        }
+
+        .role-badge.user {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #718096;
+        }
+
+        .error {
+            background: #fff5f5;
+            border: 1px solid #feb2b2;
+            color: #c53030;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+
+        /* Data Management Styles */
+        .data-management-section {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .management-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .management-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 1.5rem;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .management-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .management-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .management-card h3 {
+            margin: 0 0 0.5rem 0;
+            color: #2d3748;
+            font-size: 1.5rem;
+        }
+
+        .management-card p {
+            margin: 0 0 1.5rem 0;
+            color: #718096;
+            font-size: 1.1rem;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #f6ad55 0%, #ed8936 100%);
+        }
+
+        .btn-info {
+            background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #fc8181 0%, #f56565 100%);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #a0aec0 0%, #718096 100%);
+        }
+
+        /* Data Integrity Report Styles */
+        .integrity-report {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .integrity-summary {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .summary-card {
+            text-align: center;
+        }
+
+        .quality-score {
+            font-size: 3rem;
+            font-weight: bold;
+            margin: 1rem 0;
+            border-radius: 50%;
+            width: 120px;
+            height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto;
+        }
+
+        .quality-score.excellent {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+
+        .quality-score.good {
+            background: #f6e05e;
+            color: #744210;
+        }
+
+        .quality-score.poor {
+            background: #fc8181;
+            color: #742a2a;
+        }
+
+        .summary-stats {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .stat-item .label {
+            font-weight: 600;
+            color: #4a5568;
+        }
+
+        .stat-item .value {
+            font-weight: bold;
+        }
+
+        .stat-item .value.valid {
+            color: #38a169;
+        }
+
+        .stat-item .value.invalid {
+            color: #e53e3e;
+        }
+
+        .integrity-details h4 {
+            margin-bottom: 1rem;
+            color: #2d3748;
+        }
+
+        .collection-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .collection-item {
+            background: #f7fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 1rem;
+        }
+
+        .collection-item h5 {
+            margin: 0 0 0.5rem 0;
+            color: #4a5568;
+        }
+
+        .collection-stats-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+        }
+
+        .collection-stats-row .valid {
+            color: #38a169;
+        }
+
+        .collection-stats-row .invalid {
+            color: #e53e3e;
+        }
+
+        /* Activity Logs Styles */
+        .activity-logs-section {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .logs-content {
+            display: grid;
+            gap: 1.5rem;
+        }
+
+        .logs-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+            padding: 1rem;
+            background: #f8fafc;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .logs-filter {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .logs-filter .form-select {
+            min-width: 150px;
+            padding: 0.5rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 0.9rem;
+        }
+
+        .logs-stats {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+            color: #4a5568;
+        }
+
+        .stat-item i {
+            color: #667eea;
+        }
+
+        .logs-table-container {
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #e2e8f0;
+        }
+
+        .logs-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .logs-table th {
+            background: #f8fafc;
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            color: #2d3748;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 0.9rem;
+        }
+
+        .logs-table td {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 0.85rem;
+        }
+
+        .logs-table tr:hover {
+            background: #f8fafc;
+        }
+
+        .log-status {
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .log-status.success {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+
+        .log-status.warning {
+            background: #fef5e7;
+            color: #744210;
+        }
+
+        .log-status.error {
+            background: #fed7d7;
+            color: #c53030;
+        }
+
+        .log-status.info {
+            background: #e3f2fd;
+            color: #1565c0;
+        }
+
+        .logs-pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background: #f8fafc;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .page-info {
+            font-size: 0.9rem;
+            color: #4a5568;
+            font-weight: 500;
+        }
+
+        .log-action {
+            font-weight: 600;
+            color: #2d3748;
+        }
+
+        .log-details {
+            color: #718096;
+            max-width: 300px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .log-timestamp {
+            font-family: monospace;
+            color: #4a5568;
+            font-size: 0.8rem;
+        }
+
+        .log-ip {
+            font-family: monospace;
+            color: #718096;
+            font-size: 0.8rem;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .navbar {
+                padding: 1rem;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .management-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .integrity-summary {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="logo">
+            <div class="logo-icon">📦</div>
+            <span>SmartStock</span>
+        </div>
+        <div class="user-info">
+            <div class="user-avatar" id="userAvatar">A</div>
+            <span id="username">Admin</span>
+            <button class="logout-btn" onclick="logout()">Logout</button>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container">
+        <!-- Dashboard Header -->
+        <div class="dashboard-header">
+            <h1 class="dashboard-title">Welcome to Smart Stock Inventory Retail Management System</h1>
+            <p class="dashboard-subtitle">Manage users and monitor system activity</p>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">👥</div>
+                <div class="stat-value" id="totalUsers">0</div>
+                <div class="stat-label">Total Users</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">👑</div>
+                <div class="stat-value" id="adminUsers">0</div>
+                <div class="stat-label">Admin Users</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">👤</div>
+                <div class="stat-value" id="employeeUsers">0</div>
+                <div class="stat-label">Employee Users</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📊</div>
+                <div class="stat-value" id="todayLogins">0</div>
+                <div class="stat-label">Today's Logins</div>
+            </div>
+        </div>
+
+        <!-- Data Management Section -->
+        <div class="data-management-section">
+            <h2 class="section-title">Data Management</h2>
+            <div class="management-grid">
+                <div class="management-card">
+                    <div class="management-icon">🧹</div>
+                    <h3>Cleanup Duplicates</h3>
+                    <p>Remove duplicate records from all collections</p>
+                    <button class="btn btn-warning" onclick="cleanupDuplicates()">
+                        <i class="fas fa-broom"></i> Cleanup
+                    </button>
+                </div>
+                <div class="management-card">
+                    <div class="management-icon">🔍</div>
+                    <h3>Data Integrity</h3>
+                    <p>Check data quality and integrity</p>
+                    <button class="btn btn-info" onclick="checkDataIntegrity()">
+                        <i class="fas fa-shield-alt"></i> Check
+                    </button>
+                </div>
+                <div class="management-card">
+                    <div class="management-icon">🗑️</div>
+                    <h3>Clear Demo Data</h3>
+                    <p>Remove all test/demo data from system</p>
+                    <button class="btn btn-danger" onclick="clearDemoData()">
+                        <i class="fas fa-trash"></i> Clear All
+                    </button>
+                </div>
+                <div class="management-card">
+                    <div class="management-icon">📈</div>
+                    <h3>System Statistics</h3>
+                    <p>View detailed system statistics</p>
+                    <button class="btn btn-primary" onclick="viewSystemStats()">
+                        <i class="fas fa-chart-bar"></i> View Stats
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Data Integrity Report -->
+        <div id="integrityReport" class="integrity-report" style="display: none;">
+            <h3>Data Integrity Report</h3>
+            <div id="integrityContent"></div>
+            <button class="btn btn-secondary" onclick="closeIntegrityReport()">Close</button>
+        </div>
+
+        <!-- Activity Logs Section -->
+        <div class="activity-logs-section">
+            <h2 class="section-title">Activity Logs</h2>
+            <div class="logs-content">
+                <div class="logs-header">
+                    <div class="logs-filter">
+                        <select class="form-select" id="logTypeFilter" onchange="filterLogs()">
+                            <option value="all">All Activities</option>
+                            <option value="login">Login/Logout</option>
+                            <option value="product">Product Management</option>
+                            <option value="user">User Management</option>
+                            <option value="system">System Actions</option>
+                            <option value="data">Data Operations</option>
+                        </select>
+                        <select class="form-select" id="logTimeFilter" onchange="filterLogs()">
+                            <option value="today">Today</option>
+                            <option value="week">This Week</option>
+                            <option value="month">This Month</option>
+                            <option value="all">All Time</option>
+                        </select>
+                        <button class="btn btn-primary" onclick="refreshLogs()">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                    </div>
+                    <div class="logs-stats">
+                        <span class="stat-item">
+                            <i class="fas fa-list"></i>
+                            <span id="totalLogs">0</span> Total Logs
+                        </span>
+                        <span class="stat-item">
+                            <i class="fas fa-clock"></i>
+                            Last Updated: <span id="lastUpdated">Just now</span>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="logs-table-container">
+                    <table class="logs-table" id="logsTable">
+                        <thead>
+                            <tr>
+                                <th>Timestamp</th>
+                                <th>User</th>
+                                <th>Action</th>
+                                <th>Details</th>
+                                <th>IP Address</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="logsTableBody">
+                            <!-- Logs will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="logs-pagination">
+                    <button class="btn btn-outline-primary" onclick="loadPreviousLogs()" id="prevBtn">
+                        <i class="fas fa-chevron-left"></i> Previous
+                    </button>
+                    <span class="page-info">Page <span id="currentPage">1</span> of <span id="totalPages">1</span></span>
+                    <button class="btn btn-outline-primary" onclick="loadNextLogs()" id="nextBtn">
+                        Next <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Users Section -->
+        <div class="users-section">
+            <h2 class="section-title">Registered Users</h2>
+            <div id="loadingMessage" class="loading">Loading users...</div>
+            <div id="errorMessage" class="error" style="display: none;"></div>
+            <table class="users-table" id="usersTable" style="display: none;">
+                <thead>
+                    <tr>
+                        <th>Username</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="usersTableBody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+<script>
+    // Check authentication on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        const token = localStorage.getItem('token');
+        const role = localStorage.getItem('role');
+        const username = localStorage.getItem('username');
+
+        if (!token || role !== 'admin') {
+            alert('Access denied. Owner privileges required.');
+            window.location.href = '/login';
+            return;
+        }
+
+        // Update user info in navbar
+        document.getElementById('username').textContent = username;
+        document.getElementById('userAvatar').textContent = username.charAt(0).toUpperCase();
+
+        // Load dashboard data
+        loadUsers();
+        loadActivityLogs(); // Load activity logs on page load
+    });
+
+    // Data Management Functions
+    
+    // Cleanup duplicates
+    async function cleanupDuplicates() {
+        if (!confirm('Are you sure you want to cleanup all duplicate records? This action cannot be undone.')) {
+            return;
+        }
+        
+        try {
+            const response = await fetch('/api/cleanup-duplicates', {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Bearer ' + localStorage.getItem('token')
+                }
+            });
+            
+            const result = await response.json();
+            
+            if (response.ok) {
+                alert(`Cleanup completed successfully!\n\n${result.total_duplicates_removed} duplicate records removed:\n- Products: ${result.cleanup_results.products}\n- Alerts: ${result.cleanup_results.alerts}\n- Sales: ${result.cleanup_results.sales}\n- Transactions: ${result.cleanup_results.transactions}`);
+                loadUsers(); // Refresh data
+            } else {
+                alert('Failed to cleanup duplicates: ' + (result.error || 'Unknown error'));
+            }
+        } catch (error) {
+            alert('Error cleaning up duplicates: ' + error.message);
+        }
+    }
+    
+    // Check data integrity
+    async function checkDataIntegrity() {
+        try {
+            const response = await fetch('/api/data-integrity', {
+                headers: {
+                    'Authorization': 'Bearer ' + localStorage.getItem('token')
+                }
+            });
+            
+            const report = await response.json();
+            
+            if (response.ok) {
+                displayIntegrityReport(report);
+            } else {
+                alert('Failed to check data integrity: ' + (report.error || 'Unknown error'));
+            }
+        } catch (error) {
+            alert('Error checking data integrity: ' + error.message);
+        }
+    }
+    
+    // Display integrity report
+    function displayIntegrityReport(report) {
+        const content = document.getElementById('integrityContent');
+        const summary = report.summary;
+        
+        content.innerHTML = `
+            <div class="integrity-summary">
+                <div class="summary-card">
+                    <h4>Overall Data Quality</h4>
+                    <div class="quality-score ${summary.data_quality_percentage >= 90 ? 'excellent' : summary.data_quality_percentage >= 70 ? 'good' : 'poor'}">
+                        ${summary.data_quality_percentage}%
+                    </div>
+                </div>
+                <div class="summary-stats">
+                    <div class="stat-item">
+                        <span class="label">Total Records:</span>
+                        <span class="value">${summary.total_records}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="label">Valid Records:</span>
+                        <span class="value valid">${summary.valid_records}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="label">Invalid Records:</span>
+                        <span class="value invalid">${summary.invalid_records}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="integrity-details">
+                <h4>Collection Details</h4>
+                <div class="collection-stats">
+                    ${Object.entries(report).filter(([key]) => key !== 'summary').map(([collection, data]) => `
+                        <div class="collection-item">
+                            <h5>${collection.charAt(0).toUpperCase() + collection.slice(1)}</h5>
+                            <div class="collection-stats-row">
+                                <span>Total: ${data.total}</span>
+                                <span class="valid">Valid: ${data.valid}</span>
+                                <span class="invalid">Invalid: ${data.invalid_records}</span>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+        
+        document.getElementById('integrityReport').style.display = 'block';
+    }
+    
+    // Close integrity report
+    function closeIntegrityReport() {
+        document.getElementById('integrityReport').style.display = 'none';
+    }
+    
+    // Clear demo data
+    async function clearDemoData() {
+        if (!confirm('⚠️ WARNING: This will delete ALL data from the system including products, alerts, sales, and transactions. This action cannot be undone!\n\nType "DELETE ALL" to confirm:')) {
+            return;
+        }
+        
+        const confirmation = prompt('Please type "DELETE ALL" to confirm:');
+        if (confirmation !== 'DELETE ALL') {
+            return;
+        }
+        
+        try {
+            const response = await fetch('/api/clear-demo-data', {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Bearer ' + localStorage.getItem('token')
+                }
+            });
+            
+            const result = await response.json();
+            
+            if (response.ok) {
+                alert('All demo data cleared successfully!\n\nCleared collections: ' + result.cleared_collections.join(', '));
+                loadUsers(); // Refresh data
+            } else {
+                alert('Failed to clear demo data: ' + (result.error || 'Unknown error'));
+            }
+        } catch (error) {
+            alert('Error clearing demo data: ' + error.message);
+        }
+    }
+    
+    // View system statistics
+    async function viewSystemStats() {
+        try {
+            const response = await fetch('/api/alerts/statistics', {
+                headers: {
+                    'Authorization': 'Bearer ' + localStorage.getItem('token')
+                }
+            });
+            
+            const stats = await response.json();
+            
+            if (response.ok) {
+                alert(`System Statistics:\n\nTotal Alerts: ${stats.total || 0}\nActive Alerts: ${stats.active || 0}\nResolved Alerts: ${stats.resolved || 0}\nCritical Alerts: ${stats.critical || 0}`);
+            } else {
+                alert('Failed to load system statistics: ' + (stats.error || 'Unknown error'));
+            }
+        } catch (error) {
+            alert('Error loading system statistics: ' + error.message);
+        }
+    }
+
+    // Activity Logs Functions
+    let currentPage = 1;
+    let totalPages = 1;
+    let allLogs = [];
+
+    // Load activity logs
+    async function loadActivityLogs(page = 1) {
+        const token = localStorage.getItem('token');
+        const typeFilter = document.getElementById('logTypeFilter').value;
+        const timeFilter = document.getElementById('logTimeFilter').value;
+        
+        try {
+            const response = await fetch(`/api/activity-logs?page=${page}&type=${typeFilter}&time=${timeFilter}`, {
+                headers: {
+                    'Authorization': 'Bearer ' + token
+                }
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok) {
+                allLogs = data.logs || [];
+                currentPage = data.current_page || 1;
+                totalPages = data.total_pages || 1;
+                
+                renderLogs();
+                updateLogStats();
+                updatePagination();
+            } else {
+                console.error('Failed to load logs:', data);
+                // Generate sample logs for demo
+                generateSampleLogs();
+            }
+        } catch (error) {
+            console.error('Error loading logs:', error);
+            // Generate sample logs for demo
+            generateSampleLogs();
+        }
+    }
+
+    // Generate sample logs for demo
+    function generateSampleLogs() {
+        const sampleLogs = [
+            {
+                timestamp: new Date().toISOString(),
+                user: 'admin',
+                action: 'Login',
+                details: 'Admin logged into system',
+                ip_address: '192.168.1.100',
+                status: 'success'
+            },
+            {
+                timestamp: new Date(Date.now() - 300000).toISOString(),
+                user: 'admin',
+                action: 'Product Update',
+                details: 'Updated product: Laptop - Price changed from $999 to $1099',
+                ip_address: '192.168.1.100',
+                status: 'success'
+            },
+            {
+                timestamp: new Date(Date.now() - 600000).toISOString(),
+                user: 'admin',
+                action: 'Data Cleanup',
+                details: 'Cleaned up 15 duplicate alerts',
+                ip_address: '192.168.1.100',
+                status: 'success'
+            },
+            {
+                timestamp: new Date(Date.now() - 900000).toISOString(),
+                user: 'admin',
+                action: 'User Management',
+                details: 'Created new user: employee1',
+                ip_address: '192.168.1.100',
+                status: 'success'
+            },
+            {
+                timestamp: new Date(Date.now() - 1200000).toISOString(),
+                user: 'admin',
+                action: 'System Settings',
+                details: 'Updated shop details: Changed shop name',
+                ip_address: '192.168.1.100',
+                status: 'warning'
+            },
+            {
+                timestamp: new Date(Date.now() - 1500000).toISOString(),
+                user: 'admin',
+                action: 'Failed Login',
+                details: 'Failed login attempt with wrong password',
+                ip_address: '192.168.1.101',
+                status: 'error'
+            }
+        ];
+        
+        allLogs = sampleLogs;
+        renderLogs();
+        updateLogStats();
+        updatePagination();
+    }
+
+    // Render logs in table
+    function renderLogs() {
+        const tbody = document.getElementById('logsTableBody');
+        
+        if (allLogs.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No activity logs found</td></tr>';
+            return;
+        }
+        
+        const logsHtml = allLogs.map(log => createLogRow(log)).join('');
+        tbody.innerHTML = logsHtml;
+    }
+
+    // Create log row HTML
+    function createLogRow(log) {
+        const timestamp = new Date(log.timestamp).toLocaleString();
+        const statusClass = log.status || 'info';
+        
+        return `
+            <tr>
+                <td class="log-timestamp">${timestamp}</td>
+                <td><strong>${log.user || 'Unknown'}</strong></td>
+                <td class="log-action">${log.action || 'Unknown Action'}</td>
+                <td class="log-details" title="${log.details || 'No details'}">${log.details || 'No details'}</td>
+                <td class="log-ip">${log.ip_address || 'N/A'}</td>
+                <td><span class="log-status ${statusClass}">${statusClass}</span></td>
+            </tr>
+        `;
+    }
+
+    // Update log statistics
+    function updateLogStats() {
+        document.getElementById('totalLogs').textContent = allLogs.length;
+        document.getElementById('lastUpdated').textContent = new Date().toLocaleTimeString();
+    }
+
+    // Update pagination controls
+    function updatePagination() {
+        document.getElementById('currentPage').textContent = currentPage;
+        document.getElementById('totalPages').textContent = totalPages;
+        
+        document.getElementById('prevBtn').disabled = currentPage <= 1;
+        document.getElementById('nextBtn').disabled = currentPage >= totalPages;
+    }
+
+    // Filter logs
+    function filterLogs() {
+        loadActivityLogs(1);
+    }
+
+    // Refresh logs
+    function refreshLogs() {
+        loadActivityLogs(currentPage);
+    }
+
+    // Load previous page
+    function loadPreviousLogs() {
+        if (currentPage > 1) {
+            loadActivityLogs(currentPage - 1);
+        }
+    }
+
+    // Load next page
+    function loadNextLogs() {
+        if (currentPage < totalPages) {
+            loadActivityLogs(currentPage + 1);
+        }
+    }
+
+    // Load users from API
+    async function loadUsers() {
+        const token = localStorage.getItem('token');
+        
+        try {
+            const response = await fetch('http://127.0.0.1:5000/admin/users', {
+                headers: {
+                    'Authorization': 'Bearer ' + token
+                }
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                displayUsers(data.users);
+                updateStatistics(data.users);
+            } else {
+                showError('Failed to load users: ' + (data.message || 'Unauthorized'));
+                if (response.status === 401) {
+                    setTimeout(() => {
+                        window.location.href = '/login';
+                    }, 2000);
+                }
+            }
+        } catch (error) {
+            showError('Network error. Please check your connection.');
+            console.error('Error loading users:', error);
+        }
+    }
+
+    // Display users in table
+    function displayUsers(users) {
+        const tableBody = document.getElementById('usersTableBody');
+        const loadingMessage = document.getElementById('loadingMessage');
+        const usersTable = document.getElementById('usersTable');
+
+        // Clear existing content
+        tableBody.innerHTML = '';
+
+        // Add users to table
+        users.forEach(user => {
+            const row = tableBody.insertRow();
+            row.innerHTML = `
+                <td>${user.username}</td>
+                <td><span class="role-badge ${user.role}">${user.role}</span></td>
+                <td><span style="color: #22543d;">● Active</span></td>
+                <td>
+                    <button onclick="viewUser('${user.username}')" style="padding: 4px 8px; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">View</button>
+                </td>
+            `;
+        });
+
+        // Hide loading, show table
+        loadingMessage.style.display = 'none';
+        usersTable.style.display = 'table';
+    }
+
+    // Update statistics
+    function updateStatistics(users) {
+        const totalUsers = users.length;
+        const adminUsers = users.filter(u => u.role === 'admin').length;
+        const employeeUsers = users.filter(u => u.role === 'user').length;
+
+        document.getElementById('totalUsers').textContent = totalUsers;
+        document.getElementById('adminUsers').textContent = adminUsers;
+        document.getElementById('employeeUsers').textContent = employeeUsers;
+        document.getElementById('todayLogins').textContent = Math.floor(Math.random() * 20) + 5; // Demo data
+    }
+
+    // Show error message
+    function showError(message) {
+        const errorElement = document.getElementById('errorMessage');
+        errorElement.textContent = message;
+        errorElement.style.display = 'block';
+        document.getElementById('loadingMessage').style.display = 'none';
+    }
+
+    // View user details (placeholder function)
+    function viewUser(username) {
+        alert(`Viewing details for user: ${username}\n\nThis would open a user details modal or page.`);
+    }
+
+    // Logout function
+    function logout() {
+        localStorage.removeItem('token');
+        localStorage.removeItem('role');
+        localStorage.removeItem('username');
+        window.location.href = '/login';
+    }
+</script>
+
+</body>
+</html>

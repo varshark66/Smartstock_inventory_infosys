@@ -1,0 +1,406 @@
+{% extends "employee/base.html" %}
+
+{% block title %}Transaction History - Smart Inventory Management System{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="page-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1>Transaction History</h1>
+                <p>View all sales and stock transactions</p>
+            </div>
+            <div class="position-relative">
+                <button class="btn btn-success btn-sm" onclick="toggleDownloadOptions()">
+                    <i class="fas fa-download me-1"></i> Download <i class="fas fa-chevron-down ms-1"></i>
+                </button>
+                
+                <!-- Download Options Dropdown -->
+                <div id="downloadOptions" class="position-absolute end-0 mt-2 p-3 bg-white border rounded shadow" style="display: none; min-width: 300px; z-index: 1000;">
+                    <div class="mb-3">
+                        <label class="form-label small">From Date:</label>
+                        <input type="date" class="form-control form-control-sm" id="headerStartDate">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small">To Date:</label>
+                        <input type="date" class="form-control form-control-sm" id="headerEndDate">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small">Format:</label>
+                        <select class="form-select form-select-sm" id="headerFormat">
+                            <option value="csv">CSV</option>
+                            <option value="pdf">PDF</option>
+                        </select>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-primary btn-sm" onclick="downloadWithHeaderDates()">
+                            <i class="fas fa-download me-1"></i> Download Now
+                        </button>
+                        <button class="btn btn-secondary btn-sm" onclick="toggleDownloadOptions()">
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Section -->
+    <div class="search-filter-section">
+        <div class="row">
+            <div class="col-md-3">
+                <label class="form-label">Date Range</label>
+                <select class="form-select" id="dateFilter" onchange="toggleDateInputs()">
+                    <option value="">All Time</option>
+                    <option value="today">Today</option>
+                    <option value="week">This Week</option>
+                    <option value="month">This Month</option>
+                    <option value="custom">Custom Range</option>
+                </select>
+            </div>
+            <div class="col-md-3" id="customDateRange" style="display: none;">
+                <label class="form-label">Custom Dates</label>
+                <div class="row">
+                    <div class="col-6">
+                        <input type="date" class="form-control form-control-sm" id="startDate" onchange="filterTransactions()">
+                    </div>
+                    <div class="col-6">
+                        <input type="date" class="form-control form-control-sm" id="endDate" onchange="filterTransactions()">
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Transaction Type</label>
+                <select class="form-select" id="typeFilter" onchange="filterTransactions()">
+                    <option value="">All Methods</option>
+                    <option value="cash">Cash</option>
+                    <option value="upi">UPI</option>
+                    <option value="card">Card</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Product</label>
+                <select class="form-select" id="productFilter" onchange="filterTransactions()">
+                    <option value="">All Products</option>
+                    <option value="laptop">Laptop</option>
+                    <option value="mouse">Mouse</option>
+                    <option value="keyboard">Keyboard</option>
+                    <option value="monitor">Monitor</option>
+                    <option value="desk-chair">Desk Chair</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Search</label>
+                <div class="input-group">
+                    <span class="input-group-text">
+                        <i class="fas fa-search"></i>
+                    </span>
+                    <input type="text" class="form-control" id="searchInput" placeholder="Search transactions..." onkeyup="filterTransactions()">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Transaction Statistics -->
+    <div class="summary-cards mb-4 mt-4">
+        <div class="stat-card">
+            <div class="stat-icon blue">
+                <i class="fas fa-shopping-cart"></i>
+            </div>
+            <div class="stat-content">
+                <h3 id="totalSales">0</h3>
+                <p>Total Sales Today</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon green">
+                <i class="fas fa-plus-circle"></i>
+            </div>
+            <div class="stat-content">
+                <h3 id="totalTransactions">0</h3>
+                <p>Total Transactions</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon orange">
+                <i class="fas fa-box"></i>
+            </div>
+            <div class="stat-content">
+                <h3 id="itemsSold">0</h3>
+                <p>Items Sold Today</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon purple">
+                <i class="fas fa-chart-line"></i>
+            </div>
+            <div class="stat-content">
+                <h3 id="avgSale">0</h3>
+                <p>Average Sale Amount</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Transactions Table -->
+    <div class="table-responsive">
+        <table class="table table-striped table-hover" id="transactionTable">
+            <thead class="table-dark">
+                <tr>
+                    <th>Sr.No</th>
+                    <th>Transaction ID</th>
+                    <th>Date & Time</th>
+                    <th>Payment Method</th>
+                    <th>Product</th>
+                    <th>Quantity</th>
+                    <th>Unit Price</th>
+                    <th>Total</th>
+                    <th>User</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody id="transactionTableBody">
+                <!-- Data will come from database -->
+            </tbody>
+        </table>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Toggle custom date inputs based on dropdown selection
+        function toggleDateInputs() {
+            const dateFilter = document.getElementById('dateFilter').value;
+            const customDateRange = document.getElementById('customDateRange');
+            
+            if (dateFilter === 'custom') {
+                customDateRange.style.display = 'block';
+            } else {
+                customDateRange.style.display = 'none';
+                // Clear date inputs when hiding
+                document.getElementById('startDate').value = '';
+                document.getElementById('endDate').value = '';
+            }
+            
+            // Apply filter
+            filterTransactions();
+        }
+        
+        // Get current user name from sessionStorage (same as base.html)
+        function getCurrentUserName() {
+            const userName = sessionStorage.getItem('user_name') || 
+                           localStorage.getItem('userName') || 
+                           'Guest User';
+            return userName;
+        }
+        
+        // Update all user cells with current user name
+        function updateUserNames() {
+            const userName = getCurrentUserName();
+            const userCells = document.querySelectorAll('#transactionTableBody td:nth-child(9)');
+            
+            userCells.forEach(cell => {
+                cell.textContent = userName;
+            });
+        }
+        
+        function filterTransactions() {
+            const dateFilter = document.getElementById('dateFilter').value;
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            const typeFilter = document.getElementById('typeFilter').value;
+            const searchValue = document.getElementById('searchInput').value.toLowerCase();
+            
+            const rows = document.querySelectorAll('#transactionTableBody tr');
+            
+            rows.forEach(row => {
+                let showRow = true;
+                
+                // Filter by date range
+                if (dateFilter === 'custom' && (startDate || endDate)) {
+                    const dateStr = row.cells[2].textContent;
+                    const date = new Date(dateStr);
+                    
+                    if (startDate && date < new Date(startDate)) {
+                        showRow = false;
+                    }
+                    
+                    if (endDate && date > new Date(endDate + ' 23:59:59')) {
+                        showRow = false;
+                    }
+                } else if (dateFilter === 'today') {
+                    const today = new Date();
+                    const transactionDate = new Date(row.cells[2].textContent);
+                    if (transactionDate.toDateString() !== today.toDateString()) {
+                        showRow = false;
+                    }
+                } else if (dateFilter === 'week') {
+                    const today = new Date();
+                    const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+                    const transactionDate = new Date(row.cells[2].textContent);
+                    if (transactionDate < weekAgo) {
+                        showRow = false;
+                    }
+                } else if (dateFilter === 'month') {
+                    const today = new Date();
+                    const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+                    const transactionDate = new Date(row.cells[2].textContent);
+                    if (transactionDate < monthAgo) {
+                        showRow = false;
+                    }
+                }
+                
+                // Filter by payment method
+                if (typeFilter) {
+                    const paymentMethod = row.cells[3].textContent.toLowerCase();
+                    if (!paymentMethod.includes(typeFilter)) {
+                        showRow = false;
+                    }
+                }
+                
+                // Filter by search
+                if (searchValue) {
+                    const transactionId = row.cells[1].textContent.toLowerCase();
+                    const product = row.cells[4].textContent.toLowerCase();
+                    const user = row.cells[8].textContent.toLowerCase();
+                    
+                    if (!transactionId.includes(searchValue) && 
+                        !product.includes(searchValue) && 
+                        !user.includes(searchValue)) {
+                        showRow = false;
+                    }
+                }
+                
+                row.style.display = showRow ? '' : 'none';
+            });
+        }
+        
+        function searchTransactions() {
+            filterTransactions();
+        }
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            // Update user names when page loads
+            updateUserNames();
+            loadTransactions();
+            loadTransactionStats();
+            // Set today's date as default end date
+            const endDateInput = document.getElementById('endDate');
+            if (endDateInput) {
+                endDateInput.valueAsDate = new Date();
+            }
+            
+            // Set 30 days ago as default start date
+            const startDateInput = document.getElementById('startDate');
+            if (startDateInput) {
+                const startDate = new Date();
+                startDate.setDate(startDate.getDate() - 30);
+                startDateInput.valueAsDate = startDate;
+            }
+            
+            // Set default dates for header download
+            const headerStartDateInput = document.getElementById('headerStartDate');
+            const headerEndDateInput = document.getElementById('headerEndDate');
+            if (headerStartDateInput && headerEndDateInput) {
+                const today = new Date();
+                const thirtyDaysAgo = new Date(today.getTime() - (30 * 24 * 60 * 60 * 1000));
+                headerStartDateInput.value = thirtyDaysAgo.toISOString().split('T')[0];
+                headerEndDateInput.value = today.toISOString().split('T')[0];
+            }
+        });
+
+        // Download with header dates function
+        async function downloadWithHeaderDates() {
+            const startDate = document.getElementById('headerStartDate').value;
+            const endDate = document.getElementById('headerEndDate').value;
+            const format = document.getElementById('headerFormat').value;
+
+            if (!startDate || !endDate) {
+                alert('Please select both dates');
+                return;
+            }
+
+            const params = new URLSearchParams({
+                start_date: startDate,
+                end_date: endDate,
+                format: format
+            });
+
+            // 🔥 DIRECT DOWNLOAD (NO FETCH)
+            window.location.href = `/api/employee/transactions/download?${params}`;
+        }
+        
+        // Toggle download options dropdown
+        function toggleDownloadOptions() {
+            const dropdown = document.getElementById('downloadOptions');
+            if (dropdown.style.display === 'none' || dropdown.style.display === '') {
+                dropdown.style.display = 'block';
+                
+                // Set default dates if not set
+                const headerStartDateInput = document.getElementById('headerStartDate');
+                const headerEndDateInput = document.getElementById('headerEndDate');
+                if (headerStartDateInput && headerEndDateInput && !headerStartDateInput.value) {
+                    const today = new Date();
+                    const thirtyDaysAgo = new Date(today.getTime() - (30 * 24 * 60 * 60 * 1000));
+                    headerStartDateInput.value = thirtyDaysAgo.toISOString().split('T')[0];
+                    headerEndDateInput.value = today.toISOString().split('T')[0];
+                }
+            } else {
+                dropdown.style.display = 'none';
+            }
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            const dropdown = document.getElementById('downloadOptions');
+            const button = event.target.closest('.position-relative');
+            
+            if (!button && dropdown && dropdown.style.display === 'block') {
+                dropdown.style.display = 'none';
+            }
+        });
+        async function loadTransactions() {
+            try {
+                const response = await fetch('/api/employee/transactions');
+                const data = await response.json();
+
+                const tableBody = document.getElementById('transactionTableBody');
+                tableBody.innerHTML = '';
+
+                data.transactions.forEach((txn, index) => {
+                    const row = `
+                        <tr>
+                            <td><strong>${index + 1}</strong></td>
+                            <td><strong>${txn._id}</strong></td>
+                            <td>${txn.date || ''}</td>
+                            <td><span class="badge bg-primary">${txn.payment_method || ''}</span></td>
+                            <td>${txn.product_name || ''}</td>
+                            <td>${txn.quantity || 0}</td>
+                            <td>₹${txn.unit_price || 0}</td>
+                            <td><strong>₹${txn.total_amount || 0}</strong></td>
+                            <td>${txn.user || 'Employee'}</td>
+                            <td><span class="badge bg-success">${txn.status || 'Completed'}</span></td>
+                        </tr>
+                    `;
+                    tableBody.innerHTML += row;
+                });
+
+            } catch (error) {
+                console.error("Error loading transactions:", error);
+            }
+        }
+        async function loadTransactionStats() {
+            try {
+                const response = await fetch('/api/employee/transaction-stats');
+                const data = await response.json();
+
+                document.getElementById('totalSales').innerText = '₹' + data.total_sales_today.toFixed(2);
+                document.getElementById('totalTransactions').innerText = data.total_transactions;
+                document.getElementById('itemsSold').innerText = data.items_sold_today;
+                document.getElementById('avgSale').innerText = '₹' + data.avg_sale.toFixed(2);
+
+            } catch (error) {
+                console.error("Error loading stats:", error);
+            }
+        }
+    </script>
+{% endblock %}
